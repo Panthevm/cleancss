@@ -1,0 +1,15 @@
+{:paths ["src"]
+ :deps  {org.clojure/clojure {:mvn/version "LATEST"}
+         com.helger/ph-css   {:mvn/version "LATEST"}}
+
+ :aliases
+ {:develop
+  {:extra-paths ["resources" "test"]
+   :extra-deps  {com.bhauman/figwheel-main {:mvn/version "LATEST"}
+                 healthsamurai/matcho      {:mvn/version "LATEST"}}}
+
+  :kaocha
+  {:extra-paths ["test"]
+   :extra-deps  {lambdaisland/kaocha {:mvn/version "1.0-612"}}
+   :jvm-opts    ^:replace ["-XX:-OmitStackTraceInFastThrow"]
+   :main-opts   ["-m" "kaocha.runner" "--config-file" "test/test.edn"]}}}
