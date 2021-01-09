@@ -1,0 +1,14 @@
+#kaocha/v1
+{:tests
+ [{:id            :unit
+   :source-paths  ["src"]
+   :test-paths    ["test"]
+   :ns-patterns   ["-test$"]}]
+
+ :fail-fast? false
+ :color?     true
+ :reporter   [kaocha.report/dots]
+ :plugins    [:kaocha.plugin/filter
+              :kaocha.plugin/capture-output]
+ :kaocha.plugin.randomize/randomize? false
+ :kaocha.plugin.profiling/profiling? false}
