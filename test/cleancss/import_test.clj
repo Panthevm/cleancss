@@ -11,12 +11,21 @@
   (testing "style rule"
     (matcho/match
      (sut/from-string
-      "body {
+      "body,
+       .foo,
+       .bar > :not([hidden]) ~ :not([hidden]),
+       span text,
+       [type='reset']
+       {
          color: red !important;
          margin: 0px
        }")
      [{:type      :style-rule
-       :selectors ["body"]
+       :selectors ["body"
+                   ".foo"
+                   ".bar>:not([hidden])~:not([hidden])"
+                   "span text"
+                   "[type='reset']"]
        :declarations
        [{:type       :declaration
          :property   "color"
