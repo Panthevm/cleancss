@@ -21,11 +21,11 @@
 
     (= :media-rule (:type node))
     (when-let [stylesheets
-               (seq (remove-unused-styles used-styles (:rules node)))]
+               (seq (remove-unused-stylesheets used-styles (:rules node)))]
       (assoc node :rules stylesheets))
 
     (sequential? node)
-    (keep (partial remove-unused-styles used-styles)
+    (keep (partial remove-unused-stylesheets used-styles)
           node)
 
     :else node))
