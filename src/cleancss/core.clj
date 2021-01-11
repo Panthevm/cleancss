@@ -14,11 +14,11 @@
   (import/from-file options))
 
 
-(defn clean
-  [schema options]
-  )
-
-
 (defn export-to-string
   [schema]
   (export/to-string schema))
+
+
+(defn export-to-file
+  [schema options]
+  (export/to-file schema options))
