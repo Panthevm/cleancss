@@ -7,4 +7,8 @@
 
 #?(:clj
    (defmacro c [names]
-     (swap! styles into (map name names))))
+     (swap! styles into
+            (map (comp (partial format ".%s")
+                       name)
+                 names))
+     names))
