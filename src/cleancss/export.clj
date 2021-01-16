@@ -15,12 +15,20 @@
    [com.helger.css.decl
     CSSMediaRule
     CSSMediaQuery
+    CSSMediaQuery$EModifier
     CSSMediaExpression
     CSSStyleRule
     CSSKeyframesRule
     CSSKeyframesBlock
     CSSSelector
+    ICSSSelectorMember
+    CSSSelectorMemberFunctionLike
+    CSSSelectorMemberNot
+    ECSSSelectorCombinator
+
     CSSSelectorSimpleMember
+    CSSSelectorAttribute
+    ECSSAttributeOperator
     CSSExpression
     CSSDeclaration
     CascadingStyleSheet]
@@ -31,6 +39,7 @@
    [com.helger.css.writer
     CSSWriter
     CSSWriterSettings]))
+
 
 
 (defmulti datafy :type)
@@ -51,11 +60,71 @@
    (-> schema :value CSSExpression/createSimple)))
 
 
+(defmethod datafy :selector-simple-member
+  [schema]
+  (CSSSelectorSimpleMember.
+   (-> schema :value)))
+
+
+(defmethod datafy :attribute-operator
+  [schema]
+  (case (:name schema)
+    "="  ECSSAttributeOperator/EQUALS
+    "~=" ECSSAttributeOperator/INCLUDES
+    "|=" ECSSAttributeOperator/DASHMATCH
+    "^=" ECSSAttributeOperator/BEGINMATCH
+    "$=" ECSSAttributeOperator/ENDMATCH
+    "*=" ECSSAttributeOperator/CONTAINSMATCH))
+
+
+(defmethod datafy :selector-attribute
+  [schema]
+  (if (-> schema :operator :name)
+    (CSSSelectorAttribute.
+     (-> schema :namespace)
+     (-> schema :name)
+     (-> schema :operator datafy)
+     (-> schema :attribute))
+    (CSSSelectorAttribute.
+     (-> schema :namespace)
+     (-> schema :name))))
+
+
+(defmethod datafy :selector-member-function
+  [schema]
+  (CSSSelectorMemberFunctionLike.
+   (-> schema :name)
+   (-> schema :expression CSSExpression/createSimple)))
+
+
+(defmethod datafy :selector-member-not
+  [schema]
+  (CSSSelectorMemberNot.
+   (->> schema :selectors (map datafy))))
+
+
+(defmethod datafy :selector-combinator
+  [schema]
+  (case (:name schema)
+    "+" ECSSSelectorCombinator/PLUS
+    ">" ECSSSelectorCombinator/GREATER
+    "~" ECSSSelectorCombinator/TILDE
+    " " ECSSSelectorCombinator/BLANK))
+
+
+(defmethod datafy :selector
+  [schema]
+  (let [object (CSSSelector.)]
+    (doseq [member (:members schema)]
+      (.addMember object (datafy member)))
+    object))
+
+
 (defmethod datafy :style-rule
   [schema]
   (let [object (CSSStyleRule.)]
     (doseq [selector (:selectors schema)]
-      (.addSelector object (CSSSelectorSimpleMember. selector)))
+      (.addSelector object (datafy selector)))
     (doseq [declaration (:declarations schema)]
       (.addDeclaration object (datafy declaration)))
     object))
@@ -89,10 +158,18 @@
 
 (defmethod datafy :media-query
   [schema]
-  (let [object (CSSMediaQuery. (:medium schema))]
-    (doseq [expression (:expressions schema)]
-      (.addMediaExpression object (datafy expression)))
-    object))
+  (letfn [(get-modifier [schema]
+            (cond
+              (:only? schema) CSSMediaQuery$EModifier/ONLY
+              (:not schema)   CSSMediaQuery$EModifier/NOT
+              :else CSSMediaQuery$EModifier/NONE))]
+    (let [object
+          (CSSMediaQuery.
+           (-> schema get-modifier)
+           (-> schema :medium))]
+      (doseq [expression (:expressions schema)]
+        (.addMediaExpression object (datafy expression)))
+      object)))
 
 
 (defn to-string

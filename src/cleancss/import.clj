@@ -20,7 +20,68 @@
     CSSKeyframesRule
     CSSKeyframesBlock
     CSSMediaQuery
-    CSSMediaExpression]))
+    CSSMediaExpression
+    CSSSelector
+    ICSSSelectorMember
+    CSSSelectorSimpleMember
+    ECSSSelectorCombinator
+    CSSSelectorMemberNot
+    CSSSelectorAttribute
+    ECSSAttributeOperator
+    CSSSelectorMemberFunctionLike]))
+
+
+(extend-type CSSSelectorSimpleMember
+  protocol/Datafiable
+  (datafy [object]
+    {:type  :selector-simple-member
+     :value (.getValue object)}))
+
+
+(extend-type ECSSSelectorCombinator
+  protocol/Datafiable
+  (datafy [object]
+    {:type :selector-combinator
+     :name (.getName object)}))
+
+
+(extend-type CSSSelectorMemberNot
+  protocol/Datafiable
+  (datafy [object]
+    {:type      :selector-member-not
+     :selectors (->> object .getAllSelectors (map protocol/datafy))}))
+
+
+(extend-type ECSSAttributeOperator
+  protocol/Datafiable
+  (datafy [object]
+    {:type :attribute-operator
+     :name (-> object .getName)}))
+
+
+(extend-type CSSSelectorMemberFunctionLike
+  protocol/Datafiable
+  (datafy [object]
+    {:type       :selector-member-function
+     :name       (-> object .getFunctionName)
+     :expression (-> object .getParameterExpression .getAsCSSString)}))
+
+
+(extend-type CSSSelectorAttribute
+  protocol/Datafiable
+  (datafy [object]
+    {:type      :selector-attribute
+     :namespace (-> object .getNamespacePrefix)
+     :name      (-> object .getAttrName)
+     :operator  (-> object .getOperator protocol/datafy)
+     :attribute (-> object .getAttrValue)}))
+
+
+(extend-type CSSSelector
+  protocol/Datafiable
+  (datafy [object]
+    {:type    :selector
+     :members (->> object .getAllMembers (map protocol/datafy))}))
 
 
 (extend-type CSSDeclaration
@@ -36,7 +97,7 @@
   protocol/Datafiable
   (datafy [object]
     {:type         :style-rule
-     :selectors    (->> object .getAllSelectors    (map #(.getAsCSSString %)))
+     :selectors    (->> object .getAllSelectors    (map protocol/datafy))
      :declarations (->> object .getAllDeclarations (map protocol/datafy))}))
 
 
@@ -94,3 +155,7 @@
   [stylesheet & [options]]
   (let [reader (CSSReader/readFromString stylesheet StandardCharsets/UTF_8 ECSSVersion/CSS30)]
     (map protocol/datafy (.getAllRules reader))))
+
+(comment
+  (def s (from-file {:input-files ["/home/panthevm/study/IS/resources/public/css/tailwind.min.css"]})))
+
