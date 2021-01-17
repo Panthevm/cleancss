@@ -1,6 +1,7 @@
 (ns cleancss.core
   (:require
    [cleancss.import :as import]
+   [cleancss.filter :as filter]
    [cleancss.export :as export]))
 
 
@@ -22,3 +23,8 @@
 (defn export-to-file
   [schema options]
   (export/to-file schema options))
+
+
+(defn clean
+  [options stylesheets]
+  (filter/make-clean options stylesheets))

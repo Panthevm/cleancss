@@ -31,6 +31,15 @@
     CSSSelectorMemberFunctionLike]))
 
 
+(extend-type CSSDeclaration
+  protocol/Datafiable
+  (datafy [object]
+    {:type       :declaration
+     :property   (-> object .getProperty)
+     :expression (-> object .getExpressionAsCSSString)
+     :important? (-> object .isImportant)}))
+
+
 (extend-type CSSSelectorSimpleMember
   protocol/Datafiable
   (datafy [object]
@@ -71,9 +80,9 @@
   protocol/Datafiable
   (datafy [object]
     {:type      :selector-attribute
-     :namespace (-> object .getNamespacePrefix)
      :name      (-> object .getAttrName)
      :operator  (-> object .getOperator protocol/datafy)
+     :namespace (-> object .getNamespacePrefix)
      :attribute (-> object .getAttrValue)}))
 
 
@@ -84,30 +93,12 @@
      :members (->> object .getAllMembers (map protocol/datafy))}))
 
 
-(extend-type CSSDeclaration
-  protocol/Datafiable
-  (datafy [object]
-    {:type       :declaration
-     :property   (-> object .getProperty)
-     :expression (-> object .getExpressionAsCSSString)
-     :important? (-> object .isImportant)}))
-
-
 (extend-type CSSStyleRule
   protocol/Datafiable
   (datafy [object]
     {:type         :style-rule
      :selectors    (->> object .getAllSelectors    (map protocol/datafy))
      :declarations (->> object .getAllDeclarations (map protocol/datafy))}))
-
-
-(extend-type CSSKeyframesRule
-  protocol/Datafiable
-  (datafy [object]
-    {:type        :keyframes-rule
-     :name        (->  object .getAnimationName)
-     :declaration (->  object .getDeclaration)
-     :blocks      (->> object .getAllBlocks (map protocol/datafy))}))
 
 
 (extend-type CSSKeyframesBlock
@@ -118,12 +109,21 @@
      :declarations (->> object .getAllDeclarations (map protocol/datafy))}))
 
 
-(extend-type CSSMediaRule
+(extend-type CSSKeyframesRule
   protocol/Datafiable
   (datafy [object]
-    {:type    :media-rule
-     :queries (->> object .getAllMediaQueries (map protocol/datafy))
-     :rules   (->> object .getAllRules        (map protocol/datafy))}))
+    {:type        :keyframes-rule
+     :name        (->  object .getAnimationName)
+     :blocks      (->> object .getAllBlocks (map protocol/datafy))
+     :declaration (->  object .getDeclaration)}))
+
+
+(extend-type CSSMediaExpression
+  protocol/Datafiable
+  (datafy [object]
+    {:type    :media-expression
+     :value   (-> object .getValue .getAsCSSString)
+     :feature (-> object .getFeature)}))
 
 
 (extend-type CSSMediaQuery
@@ -136,12 +136,12 @@
      :expressions (->> object .getAllMediaExpressions (map protocol/datafy))}))
 
 
-(extend-type CSSMediaExpression
+(extend-type CSSMediaRule
   protocol/Datafiable
   (datafy [object]
-    {:type    :media-expression
-     :feature (-> object .getFeature)
-     :value   (-> object .getValue .getAsCSSString)}))
+    {:type    :media-rule
+     :rules   (->> object .getAllRules        (map protocol/datafy))
+     :queries (->> object .getAllMediaQueries (map protocol/datafy))}))
 
 
 (defn from-file
@@ -156,6 +156,6 @@
   (let [reader (CSSReader/readFromString stylesheet StandardCharsets/UTF_8 ECSSVersion/CSS30)]
     (map protocol/datafy (.getAllRules reader))))
 
+
 (comment
   (def s (from-file {:input-files ["/home/panthevm/study/IS/resources/public/css/tailwind.min.css"]})))
-

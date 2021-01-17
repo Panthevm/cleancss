@@ -41,7 +41,6 @@
     CSSWriterSettings]))
 
 
-
 (defmulti datafy :type)
 
 
@@ -53,17 +52,25 @@
    (-> schema :important?)))
 
 
-(defmethod datafy :media-expression
-  [schema]
-  (CSSMediaExpression.
-   (-> schema :feature)
-   (-> schema :value CSSExpression/createSimple)))
-
-
 (defmethod datafy :selector-simple-member
   [schema]
   (CSSSelectorSimpleMember.
    (-> schema :value)))
+
+
+(defmethod datafy :selector-combinator
+  [schema]
+  (case (:name schema)
+    "+" ECSSSelectorCombinator/PLUS
+    ">" ECSSSelectorCombinator/GREATER
+    "~" ECSSSelectorCombinator/TILDE
+    " " ECSSSelectorCombinator/BLANK))
+
+
+(defmethod datafy :selector-member-not
+  [schema]
+  (CSSSelectorMemberNot.
+   (->> schema :selectors (map datafy))))
 
 
 (defmethod datafy :attribute-operator
@@ -77,6 +84,13 @@
     "*=" ECSSAttributeOperator/CONTAINSMATCH))
 
 
+(defmethod datafy :selector-member-function
+  [schema]
+  (CSSSelectorMemberFunctionLike.
+   (-> schema :name)
+   (-> schema :expression CSSExpression/createSimple)))
+
+
 (defmethod datafy :selector-attribute
   [schema]
   (if (-> schema :operator :name)
@@ -88,28 +102,6 @@
     (CSSSelectorAttribute.
      (-> schema :namespace)
      (-> schema :name))))
-
-
-(defmethod datafy :selector-member-function
-  [schema]
-  (CSSSelectorMemberFunctionLike.
-   (-> schema :name)
-   (-> schema :expression CSSExpression/createSimple)))
-
-
-(defmethod datafy :selector-member-not
-  [schema]
-  (CSSSelectorMemberNot.
-   (->> schema :selectors (map datafy))))
-
-
-(defmethod datafy :selector-combinator
-  [schema]
-  (case (:name schema)
-    "+" ECSSSelectorCombinator/PLUS
-    ">" ECSSSelectorCombinator/GREATER
-    "~" ECSSSelectorCombinator/TILDE
-    " " ECSSSelectorCombinator/BLANK))
 
 
 (defmethod datafy :selector
@@ -130,13 +122,11 @@
     object))
 
 
-(defmethod datafy :media-rule
+(defmethod datafy :keyframes-block
   [schema]
-  (let [object (CSSMediaRule.)]
-    (doseq [query (:queries schema)]
-      (.addMediaQuery object (datafy query)))
-    (doseq [rule (:rules schema)]
-      (.addRule object (datafy rule)))
+  (let [object (CSSKeyframesBlock. (:selectors schema))]
+    (doseq [declaration (:declarations schema)]
+      (.addDeclaration object (datafy declaration)))
     object))
 
 
@@ -148,12 +138,11 @@
     object))
 
 
-(defmethod datafy :keyframes-block
+(defmethod datafy :media-expression
   [schema]
-  (let [object (CSSKeyframesBlock. (:selectors schema))]
-    (doseq [declaration (:declarations schema)]
-      (.addDeclaration object (datafy declaration)))
-    object))
+  (CSSMediaExpression.
+   (-> schema :feature)
+   (-> schema :value CSSExpression/createSimple)))
 
 
 (defmethod datafy :media-query
@@ -162,7 +151,7 @@
             (cond
               (:only? schema) CSSMediaQuery$EModifier/ONLY
               (:not schema)   CSSMediaQuery$EModifier/NOT
-              :else CSSMediaQuery$EModifier/NONE))]
+              :else           CSSMediaQuery$EModifier/NONE))]
     (let [object
           (CSSMediaQuery.
            (-> schema get-modifier)
@@ -170,6 +159,16 @@
       (doseq [expression (:expressions schema)]
         (.addMediaExpression object (datafy expression)))
       object)))
+
+
+(defmethod datafy :media-rule
+  [schema]
+  (let [object (CSSMediaRule.)]
+    (doseq [query (:queries schema)]
+      (.addMediaQuery object (datafy query)))
+    (doseq [rule (:rules schema)]
+      (.addRule object (datafy rule)))
+    object))
 
 
 (defn to-string
