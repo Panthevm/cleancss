@@ -136,8 +136,8 @@
                       :members [{:type :selector-attribute
                                  :name "disabled"}]}]})
 
-      (is      (sut/used-member? {:attributes #{["disabled"]}} member))
-      (is (not (sut/used-member? {:attributes #{["hidden"]}}   member)))))
+      (is      (sut/used-member? {:attributes #{["hidden"]}}   member))
+      (is (not (sut/used-member? {:attributes #{["disabled"]}} member)))))
 
 
   (testing "#id"

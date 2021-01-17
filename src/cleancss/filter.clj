@@ -75,8 +75,8 @@
     true
 
     (= :selector-member-not (:type member))
-    (every? (partial used-selector? application)
-            (:selectors member))))
+    (not (every? (partial used-selector? application)
+                 (:selectors member)))))
 
 
 (defn used-selector?
