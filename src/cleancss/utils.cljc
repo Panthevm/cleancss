@@ -2,30 +2,28 @@
   #?(:cljs
      (:require-macros [cleancss.utils])))
 
+(defonce classes-
+  (atom #{}))
 
-(defonce selectors
-  (atom
-   {:types       #{}
-    :classes     #{}
-    :pseudos     #{}
-    :functions   #{}
-    :namespaces  #{}
-    :attributes  #{}
-    :identifiers #{}}))
+(defonce identifiers-
+  (atom #{}))
+
+(defonce attributes-
+  (atom #{}))
 
 (defn- add-class
   [value]
   (if (sequential? value)
-    (swap! selectors update :classes into value)
-    (swap! selectors update :classes conj value)))
+    (swap! classes- update into value)
+    (swap! classes- update conj value)))
 
 (defn- add-identifier
   [value]
-  (swap! selectors update :identifiers conj value))
+  (swap! identifiers- update conj value))
 
 (defn- add-attribute
   [[attribute-name attribute-value]]
-  (swap! selectors update :attributes conj
+  (swap! attributes- update conj
          (cond-> [(name attribute-name)]
            (string? attribute-value)
            (conj attribute-value))))
