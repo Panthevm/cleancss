@@ -16,13 +16,13 @@
 
 
 (defn export-to-string
-  [schema]
-  (export/to-string schema))
+  [stylesheets]
+  (export/to-string stylesheets))
 
 
 (defn export-to-file
-  [schema options]
-  (export/to-file schema options))
+  [options stylesheets]
+  (export/to-file stylesheets options))
 
 
 (defn clean

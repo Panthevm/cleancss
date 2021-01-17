@@ -1,4 +1,7 @@
 (ns cleancss.utils
+  #?(:clj
+     (:require
+      [clojure.string :as string]))
   #?(:cljs
      (:require-macros [cleancss.utils])))
 
@@ -11,33 +14,39 @@
 (defonce attributes-
   (atom #{}))
 
-(defn- add-class
-  [value]
-  (if (sequential? value)
-    (swap! classes- update into value)
-    (swap! classes- update conj value)))
+#?(:clj
+   (defn- add-class
+     [value]
+     (letfn [(escape [v]
+               (string/replace v #":" "\\\\:"))]
+       (if (sequential? value)
+         (swap! classes- into (mapv escape value))
+         (swap! classes- conj (escape value))))))
 
-(defn- add-identifier
-  [value]
-  (swap! identifiers- update conj value))
+#?(:clj
+   (defn add-identifier
+     [value]
+     (swap! identifiers- update conj value)))
 
-(defn- add-attribute
-  [[attribute-name attribute-value]]
-  (swap! attributes- update conj
-         (cond-> [(name attribute-name)]
-           (string? attribute-value)
-           (conj attribute-value))))
+#?(:clj
+   (defn add-attribute
+     [[attribute-name attribute-value]]
+     (swap! attributes- update conj
+            (cond-> [(name attribute-name)]
+              (string? attribute-value)
+              (conj attribute-value)))))
 
 #?(:clj
    (defmacro classes [value]
      (add-class value)
-     value)
+     value))
 
+#?(:clj
    (defmacro identifier [value]
      (add-identifier value)
-     value)
+     value))
 
-
+#?(:clj
    (defmacro attribute [value]
      (when (:id value)
        (add-identifier (:id value)))
