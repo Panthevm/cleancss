@@ -42,7 +42,8 @@ CleanCSS - is a tool that removes unused CSS stylesheets
   [:nav {:class (cu/classes ["shadow-md" "rounded-lg"])}
    [:div {:class (cu/classes ["hidden" "md:block" "space-x-8" "p-6" "items-center"])}
     (for [link (-> data :links)]
-      [:a (cu/attribute {:class ["font-medium" "text-gray-500" "hover:text-gray-900"]
+      [:a (cu/attribute {:id    "id"
+                         :class ["font-medium" "text-gray-500" "hover:text-gray-900"]
                          :title (-> link :title)
                          :href  (-> link :href)})
        (:title link)])]])
@@ -75,10 +76,11 @@ CleanCSS - is a tool that removes unused CSS stylesheets
         {:input-files ["resources/public/css/tailwind.min.css"]})
        (cc/clean
         {:selectors
-         {:classes    @cu/classes-
-          :attributes @cu/attributes-
-          :types      #{"*" "a" "h1" "nav" "div" "html" "body"}
-          :pseudos    #{"::before" "::after" "::placeholder" ":root" ":focus" ":hover" ":focus-within"}}})
+         {:classes     @cu/classes-
+          :attributes  @cu/attributes-
+          :identifiers @cu/identifiers-
+          :types       #{"*" "a" "h1" "nav" "div" "html" "body"}
+          :pseudos     #{"::before" "::after" "::placeholder" ":root" ":focus" ":hover" ":focus-within"}}})
        (cc/export-to-file
         {:output-directory "resources/public/css/cssclean.css"})))
 
