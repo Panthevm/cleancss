@@ -32,7 +32,7 @@ CleanCSS - is a tool that removes unused CSS stylesheets
 
 ### Declare
 
-```clojurescript
+```clojure
 (ns app.components.navbar.view
   (:require
    [cleancss.utils :as cu]))
