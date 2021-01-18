@@ -38,15 +38,14 @@ CleanCSS - is a tool that removes unused CSS stylesheets
    [cleancss.utils :as cu]))
 
 (defn view
-  [data]
+  []
   [:nav {:class (cu/classes ["shadow-md" "rounded-lg"])}
    [:div {:class (cu/classes ["hidden" "md:block" "space-x-8" "p-6" "items-center"])}
-    (for [link (-> data :links)]
-      [:a (cu/attribute {:id    "id"
-                         :class ["font-medium" "text-gray-500" "hover:text-gray-900"]
-                         :title (-> link :title)
-                         :href  (-> link :href)})
-       (:title link)])]])
+    [:a (cu/attribute {:id    "id"
+                       :class ["font-medium" "text-gray-500" "hover:text-gray-900"]
+                       :title "home page"
+                       :href  "#/home"})
+       "Home"]]])]])
 
 ```
 
