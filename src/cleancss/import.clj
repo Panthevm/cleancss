@@ -14,20 +14,23 @@
     StandardCharsets]
 
    [com.helger.css.decl
-    CSSDeclaration
-    CSSMediaRule
     CSSStyleRule
-    CSSKeyframesRule
-    CSSKeyframesBlock
+    CSSDeclaration
+
+    CSSMediaRule
     CSSMediaQuery
     CSSMediaExpression
+
+    CSSKeyframesRule
+    CSSKeyframesBlock
+
     CSSSelector
     ICSSSelectorMember
-    CSSSelectorSimpleMember
-    ECSSSelectorCombinator
     CSSSelectorMemberNot
     CSSSelectorAttribute
     ECSSAttributeOperator
+    ECSSSelectorCombinator
+    CSSSelectorSimpleMember
     CSSSelectorMemberFunctionLike]))
 
 
@@ -155,7 +158,3 @@
   [stylesheet & [options]]
   (let [reader (CSSReader/readFromString stylesheet StandardCharsets/UTF_8 ECSSVersion/CSS30)]
     (map protocol/datafy (.getAllRules reader))))
-
-
-(comment
-  (def s (from-file {:input-files ["/home/panthevm/study/IS/resources/public/css/tailwind.min.css"]})))

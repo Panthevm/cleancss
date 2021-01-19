@@ -170,9 +170,6 @@
   (testing "selectors"
     (testing "style rule"
       (matcho/match
-       [{:type      :style-rule
-         :selectors [{:type    :selector
-                      :members [{:type :selector-simple-member :value "h1"}]}]}]
        (sut/make-clean
         {:selectors {:namespaces  #{}
                      :types       #{"h1"}
@@ -182,27 +179,53 @@
                      :functions   #{}
                      :attributes  #{}}}
         [{:type :style-rule
-          :selectors
-          [{:type :selector :members [{:type :selector-simple-member :value "h1"}]}
-           {:type :selector :members [{:type :selector-simple-member :value "iframe"}]}]}
-         {:type :style-rule
-          :selectors
-          [{:type :selector :members [{:type :selector-simple-member :value "iframe"}]}]}])))
+            :selectors
+            [{:type :selector :members [{:type :selector-simple-member :value "h1"}]}
+             {:type :selector :members [{:type :selector-simple-member :value "iframe"}]}]}
+           {:type :style-rule
+            :selectors
+            [{:type :selector :members [{:type :selector-simple-member :value "iframe"}]}]}])
+       [{:type      :style-rule
+         :selectors [{:type    :selector
+                      :members [{:type :selector-simple-member :value "h1"}]}]}]))
 
 
     (testing "media rule"
       (matcho/match
-       [{:type  :media-rule
-         :rules [{:type      :style-rule
-                  :selectors [{:type    :selector
-                               :members [{:type :selector-simple-member :value "h1"}]}]}]}]
        (sut/make-clean
         {:selectors {:types #{"h1"}}}
         [{:type  :media-rule
           :rules [{:type      :style-rule
                    :selectors [{:type    :selector
-                                :members [{:type :selector-simple-member :value "h1"}]}]}]}
+                                :members [{:type :selector-simple-member :value "h1"}]}
+                               {:type    :selector
+                                :members [{:type :selector-simple-member :value "h2"}]}]}]}
          {:type  :media-rule
           :rules [{:type      :style-rule
                    :selectors [{:type    :selector
-                                :members [{:type :selector-simple-member :value "h2"}]}]}]}])))))
+                                :members [{:type :selector-simple-member :value "h2"}]}]}]}])
+       [{:type  :media-rule
+         :rules [{:type      :style-rule
+                  :selectors [{:type    :selector
+                               :members [{:type :selector-simple-member :value "h1"}]}]}]}]))
+
+
+    (testing "keyframes-rule"
+      (matcho/match
+       (sut/make-clean
+        {:selectors {:types #{"h1"}}}
+        [{:type  :media-rule
+          :rules [{:type         :style-rule
+                   :selectors    [{:type    :selector
+                                   :members [{:type :selector-simple-member :value "h1"}]}]
+                   :declarations [{:type       :declaration
+                                   :property   "animation"
+                                   :expression "spin 1s linear infinite"
+                                   :important? false}]}]}
+         {:type :keyframes-rule :name "spin"}
+         {:type :keyframes-rule :name "ping"}])
+       [{:type :keyframes-rule :name "spin"}
+        {:type  :media-rule
+         :rules [{:type      :style-rule
+                  :selectors [{:type    :selector
+                               :members [{:type :selector-simple-member :value "h1"}]}]}]}]))))

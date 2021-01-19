@@ -22,7 +22,7 @@
 
 (defn export-to-file
   [options stylesheets]
-  (export/to-file stylesheets options))
+  (export/to-file options stylesheets))
 
 
 (defn clean

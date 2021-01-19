@@ -80,42 +80,81 @@
 
 
 (defn used-selector?
-  [application selector]
-  (every? (partial used-member? application)
+  [selectors selector]
+  (every? (partial used-member? selectors)
           (:members selector)))
 
 
-(defmulti clean
-  (fn [options stylesheet]
-    (:type stylesheet)))
+(defn remove-unused-selectors
+  [application selectors]
+  (filter (partial used-selector? (:selectors application))
+          selectors))
 
 
-(defmethod clean :style-rule
-  [options stylesheet]
-  (let [used-selectors
-        (filter (partial used-selector? (:selectors options))
-                (:selectors stylesheet))]
-    (when (seq used-selectors)
-      (assoc stylesheet :selectors used-selectors))))
+(defn remove-unused-stylesheets
+  [application stylesheets]
+  (loop [processing stylesheets
+         processed  []]
+    (if processing
+      (let [stylesheet (first processing)]
+        (cond
+
+          (= :style-rule (:type stylesheet))
+          (let [updated-stylesheet
+                (update stylesheet :selectors
+                        (partial remove-unused-selectors application))]
+            (if (seq (:selectors updated-stylesheet))
+              (recur (next processing) (cons updated-stylesheet processed))
+              (recur (next processing) processed)))
+
+          (= :media-rule (:type stylesheet))
+          (let [updated-stylesheet
+                (update stylesheet :rules
+                        (partial remove-unused-stylesheets application))]
+            (if (seq (:rules updated-stylesheet))
+              (recur (next processing) (cons updated-stylesheet processed))
+              (recur (next processing) processed)))
+
+          (= :keyframes-rule (:type stylesheet))
+          (recur (next processing) (concat processed (list stylesheet)))))
+
+      processed)))
 
 
-(defmethod clean :media-rule
-  [options stylesheet]
-  (let [stylesheets
-        (keep (partial clean options)
-              (:rules stylesheet))]
-    (when (seq stylesheets)
-      (assoc stylesheet :rules stylesheets))))
+(defn remove-unused-keyframes
+  [stylesheets]
+  (loop [processing stylesheets
+         processed  []
+         animations #{}]
+    (if processing
+      (let [stylesheet (first processing)]
+        (cond
 
+          (= :style-rule (:type stylesheet))
+          (recur (next processing)
+                 (cons stylesheet processed)
+                 (conj animations
+                       (some->> (:declarations stylesheet)
+                                (filter (comp #{"animation"} :property))
+                                first
+                                :expression
+                                (re-seq #"[^ ]+")
+                                first)))
 
-(defmethod clean :default
-  [options stylesheet]
-  stylesheet)
+          (= :media-rule (:type stylesheet))
+          (let [[media-animations media-stylesheets] (remove-unused-keyframes (:rules stylesheet))]
+            (recur (next processing) (cons stylesheet processed) (into animations media-animations)))
+
+          (= :keyframes-rule (:type stylesheet))
+          (if (contains? animations (:name stylesheet))
+            (recur (next processing) (cons stylesheet processed) animations)
+            (recur (next processing) processed                   animations))))
+      [animations processed])))
+
 
 (defn make-clean
-  [options stylesheets]
-  (keep (partial clean options)
-        stylesheets))
-
-
-
+  [application stylesheets]
+  (->> stylesheets
+       (remove-unused-stylesheets application)
+       (remove-unused-keyframes) second
+       ))

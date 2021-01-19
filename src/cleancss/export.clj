@@ -9,36 +9,29 @@
    [com.helger.css
     ECSSVersion]
 
-   [java.nio.charset
-    StandardCharsets]
-
    [com.helger.css.decl
+    CSSStyleRule
+    CSSDeclaration
+    CSSExpression
+
     CSSMediaRule
     CSSMediaQuery
     CSSMediaQuery$EModifier
     CSSMediaExpression
-    CSSStyleRule
+
     CSSKeyframesRule
     CSSKeyframesBlock
+
+    CascadingStyleSheet
+
     CSSSelector
     ICSSSelectorMember
-    CSSSelectorMemberFunctionLike
     CSSSelectorMemberNot
-    ECSSSelectorCombinator
-
-    CSSSelectorSimpleMember
     CSSSelectorAttribute
     ECSSAttributeOperator
-    CSSExpression
-    CSSDeclaration
-    CascadingStyleSheet]
-
-   [com.helger.css.reader
-    CSSReader]
-
-   [com.helger.css.writer
-    CSSWriter
-    CSSWriterSettings]))
+    ECSSSelectorCombinator
+    CSSSelectorSimpleMember
+    CSSSelectorMemberFunctionLike]))
 
 
 (defmulti datafy :type)
@@ -183,13 +176,13 @@
 
 
 (defn to-file
-  [schema options]
+  [options stylesheets]
   (let [cascading-object (CascadingStyleSheet.)
         settings-object  (CSSWriterSettings. ECSSVersion/CSS30 true)
         writer-object    (doto (CSSWriter. settings-object)
                            (.setWriteHeaderText false)
                            (.setContentCharset "UTF-8"))]
-    (doseq [node schema]
-      (.addRule cascading-object (datafy node)))
+    (doseq [style stylesheets]
+      (.addRule cascading-object (datafy style)))
     (with-open [writer (io/writer (-> options :output-directory))]
       (.write writer (.getCSSAsString writer-object cascading-object)))))
