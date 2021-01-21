@@ -5,14 +5,9 @@
   #?(:cljs
      (:require-macros [cleancss.utils])))
 
-(defonce classes-
-  (atom #{}))
-
-(defonce identifiers-
-  (atom #{}))
-
-(defonce attributes-
-  (atom #{}))
+#?(:clj (defonce classes-     (atom #{})))
+#?(:clj (defonce identifiers- (atom #{})))
+#?(:clj (defonce attributes-  (atom #{})))
 
 #?(:clj
    (defn- add-class

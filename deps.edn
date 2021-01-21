@@ -3,11 +3,7 @@
          com.helger/ph-css   {:mvn/version "LATEST"}}
 
  :aliases
- {:develop
-  {:extra-paths ["resources"]
-   :extra-deps  {com.bhauman/figwheel-main {:mvn/version "LATEST"}}}
-
-  :test
+ {:test
   {:extra-paths ["test"]
    :extra-deps  {healthsamurai/matcho {:mvn/version "LATEST"}}}
 

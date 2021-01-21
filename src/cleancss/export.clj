@@ -176,7 +176,7 @@
 
 
 (defn to-file
-  [options stylesheets]
+  [configuration stylesheets]
   (let [cascading-object (CascadingStyleSheet.)
         settings-object  (CSSWriterSettings. ECSSVersion/CSS30 true)
         writer-object    (doto (CSSWriter. settings-object)
@@ -184,5 +184,5 @@
                            (.setContentCharset "UTF-8"))]
     (doseq [style stylesheets]
       (.addRule cascading-object (datafy style)))
-    (with-open [writer (io/writer (-> options :output-directory))]
+    (with-open [writer (io/writer (-> configuration :output-file))]
       (.write writer (.getCSSAsString writer-object cascading-object)))))

@@ -40,13 +40,16 @@
                 :else true)))
           attributes)))
 
+
 (declare used-selector?)
+
 
 (defn used-member?
   [application member]
   (cond
     (= :selector-simple-member (:type member))
     (cond
+
       (string/starts-with? (:value member) ".")
       (contains? (:classes application) (subs (:value member) 1))
 
@@ -87,7 +90,7 @@
 
 (defn remove-unused-selectors
   [application selectors]
-  (filter (partial used-selector? (:selectors application))
+  (filter (partial used-selector? application)
           selectors))
 
 
