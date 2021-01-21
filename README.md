@@ -23,8 +23,8 @@ cleancss/cleancss {:mvn/version "RELEASE"}
   :types :all
 
   ;; If you do not specify a value, the data will be taken from the application
-  ;; :identifiers #{"#id"}
-  ;; :classes     #{".name"}
+  ;; :identifiers #{"id"}
+  ;; :classes     #{"name"}
   ;; :attributes  #{["hidden"] ["hreflang" "en"]}
   }
 
