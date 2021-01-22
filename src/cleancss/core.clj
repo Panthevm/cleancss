@@ -1,4 +1,5 @@
 (ns cleancss.core
+  (:gen-class)
   (:require
    [cleancss.import :as import]
    [cleancss.filter :as filter]
@@ -28,3 +29,5 @@
 (defn clean
   [options stylesheets]
   (filter/make-clean options stylesheets))
+
+(defn -main [& args])

@@ -1,14 +1,23 @@
 {:paths ["src"]
- :deps  {org.clojure/clojure {:mvn/version "LATEST"}
-         com.helger/ph-css   {:mvn/version "LATEST"}}
+ :deps  {org.clojure/clojure {:mvn/version "RELEASE"}
+         com.helger/ph-css   {:mvn/version "RELEASE"}}
 
  :aliases
  {:test
   {:extra-paths ["test"]
-   :extra-deps  {healthsamurai/matcho {:mvn/version "LATEST"}}}
+   :extra-deps  {healthsamurai/matcho {:mvn/version "RELEASE"}}}
 
   :kaocha
   {:extra-paths ["test"]
    :extra-deps  {lambdaisland/kaocha {:mvn/version "1.0-612"}}
    :jvm-opts    ^:replace ["-XX:-OmitStackTraceInFastThrow"]
-   :main-opts   ["-m" "kaocha.runner" "--config-file" "test/settings.edn"]}}}
+   :main-opts   ["-m" "kaocha.runner" "--config-file" "test/settings.edn"]}
+
+  :uberjar
+  {:extra-deps {uberdeps {:mvn/version "RELEASE"}}
+   :main-opts ["-m"           "uberdeps.uberjar"
+               "--main-class" "cleancss.core"]}
+
+  :deploy
+  {:extra-deps {slipset/deps-deploy {:mvn/version "RELEASE"}}
+   :main-opts  ["-m" "deps-deploy.deps-deploy" "deploy" "target/cleancss.jar"]}}}
