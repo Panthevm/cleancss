@@ -4,8 +4,23 @@
   <packaging>jar</packaging>
   <groupId>cleancss</groupId>
   <artifactId>cleancss</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <name>cleancss</name>
+  <description>CleanCSS - is a tool that removes unused CSS stylesheets</description>
+  <url>https://github.com/Panthevm/cleancss</url>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://mit-license.org/</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <scm>
+    <connection>scm:git:git@github.com:Panthevm/cleancss.git</connection>
+    <developerConnection>scm:git:git@github.com:Panthevm/cleancss.git</developerConnection>
+    <url>https://github.com/Panthevm/cleancss</url>
+    <tag>HEAD</tag>
+  </scm>
   <dependencies>
     <dependency>
       <groupId>org.clojure</groupId>
