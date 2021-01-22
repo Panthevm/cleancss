@@ -1,9 +1,13 @@
 # CleanCSS
+
+[![Clojars Project](https://img.shields.io/clojars/v/cleancss.svg)](https://clojars.org/cleancss)
+
 CleanCSS - is a tool that removes unused CSS stylesheets
 
 ## Usage
 
 1) Add a dependency:
+
 
 ```edn
 cleancss/cleancss {:mvn/version "RELEASE"}
