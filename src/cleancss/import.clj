@@ -149,9 +149,12 @@
 
 (defn from-file
   [options]
-  (let [file   (-> options :input-files first io/file)
-        reader (CSSReader/readFromFile file StandardCharsets/UTF_8 ECSSVersion/CSS30)]
-    (map protocol/datafy (.getAllRules reader))))
+  (->>
+   options :input-files
+   (mapcat
+    (fn [directory]
+      (map protocol/datafy
+           (.getAllRules (CSSReader/readFromFile (io/file directory) StandardCharsets/UTF_8 ECSSVersion/CSS30)))))))
 
 
 (defn from-string
