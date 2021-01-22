@@ -171,13 +171,13 @@
     (testing "style rule"
       (matcho/match
        (sut/make-clean
-        {:selectors {:namespaces  #{}
-                     :types       #{"h1"}
-                     :identifiers #{}
-                     :classes     #{}
-                     :pseudos     #{}
-                     :functions   #{}
-                     :attributes  #{}}}
+        {:namespaces  #{}
+         :types       #{"h1"}
+         :identifiers #{}
+         :classes     #{}
+         :pseudos     #{}
+         :functions   #{}
+         :attributes  #{}}
         [{:type :style-rule
             :selectors
             [{:type :selector :members [{:type :selector-simple-member :value "h1"}]}
@@ -193,7 +193,7 @@
     (testing "media rule"
       (matcho/match
        (sut/make-clean
-        {:selectors {:types #{"h1"}}}
+        {:types #{"h1"}}
         [{:type  :media-rule
           :rules [{:type      :style-rule
                    :selectors [{:type    :selector
@@ -213,7 +213,7 @@
     (testing "keyframes-rule"
       (matcho/match
        (sut/make-clean
-        {:selectors {:types #{"h1"}}}
+        {:types #{"h1"}}
         [{:type  :media-rule
           :rules [{:type         :style-rule
                    :selectors    [{:type    :selector
