@@ -6,4 +6,4 @@
  {:figwheel
   {:extra-paths ["resources"]
    :extra-deps  {com.bhauman/figwheel-main {:mvn/version "LATEST"}
-                 cleancss/cleancss         {:mvn/version "LATEST"}}}}}
+                 cleancss/cleancss         {:mvn/version "0.1.2"}}}}}
