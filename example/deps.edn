@@ -1,0 +1,9 @@
+{:paths ["src"]
+ :deps  {org.clojure/clojurescript {:mvn/version "LATEST"}
+         reagent/reagent           {:mvn/version "LATEST"}}
+
+ :aliases
+ {:figwheel
+  {:extra-paths ["resources"]
+   :extra-deps  {com.bhauman/figwheel-main {:mvn/version "LATEST"}
+                 cleancss/cleancss         {:mvn/version "LATEST"}}}}}
