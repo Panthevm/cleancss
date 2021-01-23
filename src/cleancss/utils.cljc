@@ -1,7 +1,6 @@
 (ns cleancss.utils
   #?(:clj
-     (:require
-      [clojure.string :as string]))
+     (:require [clojure.string :as string]))
   #?(:cljs
      (:require-macros [cleancss.utils])))
 
@@ -32,17 +31,17 @@
               (conj attribute-value)))))
 
 #?(:clj
-   (defmacro classes [value]
+   (defmacro c [value]
      (add-class value)
      value))
 
 #?(:clj
-   (defmacro identifier [value]
+   (defmacro i [value]
      (add-identifier value)
      value))
 
 #?(:clj
-   (defmacro attribute [value]
+   (defmacro a [value]
      (when (:id value)
        (add-identifier (:id value)))
      (when (:class value)
