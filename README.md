@@ -53,19 +53,19 @@ cleancss/cleancss {:mvn/version "RELEASE"}
 ```clojure
 (ns app.core
   (:require
-   [cleancss.utils :as cu]))
+   [cleancss.utils :refer [c i a]))
 
 (defn component
   []
   ;; classes
-  [:nav {:class (cu/classes ["shadow-md" "rounded-lg"])}
+  [:nav {:class (c ["shadow-md" "rounded-lg"])}
 
    ;; identifiers
-   [:button {:id (cu/identifier "id")}
+   [:button {:id (i "id")}
     "Login"]
 
    ;; attributes, classes, identifiers
-   [:button (cu/attribute {:id "send" :class ["save"] :type "button"})
+   [:button (a {:id "send" :class ["save"] :type "button"})
     "Info"]])
 ```
 
