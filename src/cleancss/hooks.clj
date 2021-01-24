@@ -19,12 +19,20 @@
   (-> configuration :build :import core/import-from-file))
 
 
+(defn concat-map-values
+  [m]
+  (reduce-kv
+   (fn [acc k v]
+     (into acc v))
+   #{} m))
+
+
 (defn application-update
   [application]
   (-> application
-      (update :identifiers #(if (empty? %) @utils/identifiers- %))
-      (update :attributes  #(if (empty? %) @utils/attributes-  %))
-      (update :classes     #(if (empty? %) @utils/classes-     %))
+      (update :identifiers #(if (empty? %) (concat-map-values @utils/identifiers) %))
+      (update :attributes  #(if (empty? %) (concat-map-values @utils/attributes)  %))
+      (update :classes     #(if (empty? %) (concat-map-values @utils/classes)     %))
       (update :types       #(if (= :all %) defaults/types      %))
       (update :pseudos     #(if (= :all %) defaults/pseudos    %))
       (update :functions   #(if (= :all %) defaults/functions  %))))
@@ -39,6 +47,6 @@
 
 (defn reset
   [session]
-  (reset! utils/identifiers- #{})
-  (reset! utils/attributes-  #{})
-  (reset! utils/classes-     #{}))
+  (swap! utils/identifiers assoc (:ns session) #{})
+  (swap! utils/attributes  assoc (:ns session) #{})
+  (swap! utils/classes     assoc (:ns session) #{}))

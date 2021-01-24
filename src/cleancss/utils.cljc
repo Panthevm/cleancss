@@ -4,41 +4,43 @@
   #?(:cljs
      (:require-macros [cleancss.utils])))
 
-#?(:clj (defonce classes-     (atom #{})))
-#?(:clj (defonce identifiers- (atom #{})))
-#?(:clj (defonce attributes-  (atom #{})))
+#?(:clj (defonce classes     (atom {})))
+#?(:clj (defonce identifiers (atom {})))
+#?(:clj (defonce attributes  (atom {})))
 
 #?(:clj
    (defn- add-class
-     [value]
+     [ns value]
      (letfn [(escape [v]
                (string/replace v #":" "\\\\:"))]
        (if (sequential? value)
-         (swap! classes- into (mapv escape value))
-         (swap! classes- conj (escape value))))))
+         (swap! classes update ns into (mapv escape value))
+         (swap! classes update ns conj (escape value))))))
 
 #?(:clj
    (defn add-identifier
-     [value]
-     (swap! identifiers- update conj value)))
+     [ns value]
+     (swap! identifiers update ns conj value)))
 
 #?(:clj
    (defn add-attribute
-     [[attribute-name attribute-value]]
-     (swap! attributes- update conj
+     [ns [attribute-name attribute-value]]
+     (swap! attributes update ns (fnil conj #{})
             (cond-> [(name attribute-name)]
               (string? attribute-value)
               (conj attribute-value)))))
 
 #?(:clj
-   (defmacro c [value]
-     (add-class value)
-     value))
+   (defmacro c [& value]
+     (let [ns (-> &env :ns :name)]
+       (add-class ns value)
+       (vec value))))
 
 #?(:clj
    (defmacro i [value]
-     (add-identifier value)
-     value))
+     (let [ns (-> &env :ns :name)]
+       (add-identifier value)
+       value)))
 
 #?(:clj
    (defmacro a [value]
