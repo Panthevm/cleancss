@@ -1,6 +1,7 @@
 ^{:watch-dirs          ["src" "../src"]
   :css-dirs            ["resources/public/css"]
   :ring-server-options {:port 3000}
+  :clean-outputs       true
   :pre-build-hooks     [cleancss.hooks/reset]
   :post-build-hooks    [cleancss.hooks/build]}
 
@@ -8,6 +9,4 @@
  :output-to     "resources/public/js/main.js"
  :output-dir    "resources/public/js/out"
  :asset-path    "js/out"
- :preloads
- [cleancss.utils]
  :optimizations :none}

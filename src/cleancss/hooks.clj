@@ -5,7 +5,8 @@
    [cleancss.defaults :as defaults]
 
    [clojure.java.io :as io]
-   [clojure.edn     :as edn])
+   [clojure.edn     :as edn]
+   [cljs.build.api  :as cljs-api])
 
   (:import
    [java.io PushbackReader]))
@@ -20,11 +21,11 @@
 
 
 (defn concat-map-values
-  [m]
+  [data]
   (reduce-kv
    (fn [acc k v]
      (into acc v))
-   #{} m))
+   #{} data))
 
 
 (defn application-update

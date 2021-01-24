@@ -1,46 +1,54 @@
 (ns cleancss.utils
-  #?(:clj
-     (:require [clojure.string :as string]))
-  #?(:cljs
-     (:require-macros [cleancss.utils])))
+  #?(:clj  (:require [clojure.string :as string]))
+  #?(:cljs (:require-macros [cleancss.utils])))
 
 #?(:clj (defonce classes     (atom {})))
 #?(:clj (defonce identifiers (atom {})))
 #?(:clj (defonce attributes  (atom {})))
 
+
 #?(:clj
-   (defn- add-class
+   (defn escape
+     [value]
+     (string/replace value #":" "\\\\:")))
+
+
+#?(:clj
+   (defn add-class
      [ns value]
-     (letfn [(escape [v]
-               (string/replace v #":" "\\\\:"))]
-       (if (sequential? value)
-         (swap! classes update ns into (mapv escape value))
-         (swap! classes update ns conj (escape value))))))
+     (if (sequential? value)
+       (swap! classes update ns into (mapv escape value))
+       (swap! classes update ns conj (escape value)))))
+
 
 #?(:clj
    (defn add-identifier
      [ns value]
      (swap! identifiers update ns conj value)))
 
+
 #?(:clj
    (defn add-attribute
      [ns [attribute-name attribute-value]]
-     (swap! attributes update ns (fnil conj #{})
+     (swap! attributes update ns conj
             (cond-> [(name attribute-name)]
               (string? attribute-value)
               (conj attribute-value)))))
 
+
 #?(:clj
-   (defmacro c [& value]
+   (defmacro c [value]
      (let [ns (-> &env :ns :name)]
        (add-class ns value)
-       (vec value))))
+       value)))
+
 
 #?(:clj
    (defmacro i [value]
      (let [ns (-> &env :ns :name)]
        (add-identifier value)
        value)))
+
 
 #?(:clj
    (defmacro a [value]
