@@ -213,7 +213,8 @@
     (testing "keyframes-rule"
       (matcho/match
        (sut/make-clean
-        {:types #{"h1"}}
+        {:keyframes? true
+         :types      #{"h1"}}
         [{:type  :media-rule
           :rules [{:type         :style-rule
                    :selectors    [{:type    :selector

@@ -1,2 +1,4 @@
 .cpcache
 .nrepl-port
+example/resources/public/js
+example/resources/public/css/cleancss.css

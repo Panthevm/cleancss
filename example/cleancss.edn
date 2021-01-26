@@ -2,7 +2,7 @@
  :application
  {:functions :all
   :pseudos   :all
-  :types     #{"*" "html" "body" "section" "div"}}
+  :types     #{"*" "html" "body" "section"}}
 
  :build
  {:import {:input-files ["resources/public/css/tailwind.min.css"]}
