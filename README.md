@@ -22,7 +22,10 @@ cleancss/cleancss {:mvn/version "RELEASE"}
  :watch-dirs ["src"]
  
  :application
- {;; :all - Includes all functions `cleancss.defaults/functions`. Or a custom set #{":lang" ...}
+ {;; supporting keyframes
+  :keyframes? false
+  
+  ;; :all - Includes all functions `cleancss.defaults/functions`. Or a custom set #{":lang" ...}
   :functions :all
 
   ;; :all - Includes all pseudos `cleancss.defaults/pseudos`. Or a custom set #{":hover" ...}
