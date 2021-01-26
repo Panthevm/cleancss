@@ -6,7 +6,6 @@
 #?(:clj (defonce identifiers (atom {})))
 #?(:clj (defonce attributes  (atom {})))
 
-
 #?(:clj
    (defn escape
      [value]
@@ -17,30 +16,30 @@
    (defn add-class
      [ns value]
      (if (sequential? value)
-       (swap! classes update ns into (mapv escape value))
-       (swap! classes update ns conj (escape value)))))
+       (swap! classes update ns (fnil into #{}) (mapv escape value))
+       (swap! classes update ns (fnil conj #{}) (escape value)))))
 
 
 #?(:clj
    (defn add-identifier
      [ns value]
-     (swap! identifiers update ns conj value)))
+     (swap! identifiers update ns (fnil conj #{}) value)))
 
 
 #?(:clj
    (defn add-attribute
      [ns [attribute-name attribute-value]]
-     (swap! attributes update ns conj
+     (swap! attributes update ns (fnil conj #{})
             (cond-> [(name attribute-name)]
               (string? attribute-value)
               (conj attribute-value)))))
 
 
 #?(:clj
-   (defmacro c [value]
+   (defmacro c [& value]
      (let [ns (-> &env :ns :name)]
        (add-class ns value)
-       value)))
+       (vec value))))
 
 
 #?(:clj

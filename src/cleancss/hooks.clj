@@ -6,7 +6,11 @@
 
    [clojure.java.io :as io]
    [clojure.edn     :as edn]
-   [cljs.build.api  :as cljs-api])
+
+   [cljs.compiler :as cljs-compler]
+   [cljs.util     :as cljs-util]
+   [cljs.analyzer.api :as cljs-analyzer]
+   [cljs.repl     :as r])
 
   (:import
    [java.io PushbackReader]))
@@ -40,14 +44,38 @@
 
 
 (defn build
-  [session]
+  [_]
+  (prn @utils/classes)
   (->> stylesheets
        (core/clean          (-> configuration :application application-update))
        (core/export-to-file (-> configuration :build :export))))
 
 
+(defn update-state
+  [updated-namespace exists-namespaces state]
+  (-> state
+      (dissoc updated-namespace)
+      (select-keys exists-namespaces)))
+
+
 (defn reset
-  [session]
-  (swap! utils/identifiers assoc (:ns session) #{})
-  (swap! utils/attributes  assoc (:ns session) #{})
-  (swap! utils/classes     assoc (:ns session) #{}))
+  [_]
+  (let [namespaces-info
+        (->> configuration :watch-dirs
+             (mapcat (comp cljs-compler/cljs-files-in io/file))
+             (map (fn [file]
+                    {:ns       (-> file .getPath cljs-analyzer/parse-ns :ns)
+                     :modified (-> file cljs-util/last-modified)})))
+
+        exists-namespaces
+        (map :ns namespaces-info)
+
+        updated-namespace
+        (->> namespaces-info
+             (apply max-key :modified)
+             :ns)]
+
+    (prn updated-namespace)
+    (swap! utils/identifiers (partial update-state updated-namespace exists-namespaces))
+    (swap! utils/attributes  (partial update-state updated-namespace exists-namespaces))
+    (swap! utils/classes     (partial update-state updated-namespace exists-namespaces))))

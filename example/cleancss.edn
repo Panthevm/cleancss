@@ -1,4 +1,5 @@
-{:application
+{:watch-dirs ["src"]
+ :application
  {:functions :all
   :pseudos   :all
   :types     #{"*" "html" "body" "section" "div"}}
