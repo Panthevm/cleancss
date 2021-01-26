@@ -1,3 +1,5 @@
+<p align="center"><a href="https://github.com/Panthevm/cleancss"><img src="https://i.ibb.co/HrFyQQ8/cleancss.png" alt="logo"></a></p>
+
 # CleanCSS
 
 [![Clojars Project](https://img.shields.io/clojars/v/cleancss.svg)](https://clojars.org/cleancss)
@@ -16,7 +18,10 @@ cleancss/cleancss {:mvn/version "RELEASE"}
 2) Create the `cleancss.edn` configuration file in the root directory of the project:
 
 ```edn
-{:application
+{;; project sources
+ :watch-dirs ["src"]
+ 
+ :application
  {;; :all - Includes all functions `cleancss.defaults/functions`. Or a custom set #{":lang" ...}
   :functions :all
 
@@ -44,6 +49,7 @@ cleancss/cleancss {:mvn/version "RELEASE"}
 3) Add a call to `cleancss.hooks/reset` before building the project and `cleancss.hooks/build` after building.For example, in [figwheel-main](https://github.com/bhauman/figwheel-main), this is configured as follows:
 
 ```edn
+  :clean-outputs    true
   :pre-build-hooks  [cleancss.hooks/reset]
   :post-build-hooks [cleancss.hooks/build]
 ```
@@ -58,7 +64,7 @@ cleancss/cleancss {:mvn/version "RELEASE"}
 (defn component
   []
   ;; classes
-  [:nav {:class (c ["shadow-md" "rounded-lg"])}
+  [:nav {:class (c "shadow-md" "rounded-lg")}
 
    ;; identifiers
    [:button {:id (i "id")}
@@ -71,8 +77,4 @@ cleancss/cleancss {:mvn/version "RELEASE"}
 
 ## Demo
 ![demo](https://s2.gifyu.com/images/ezgif.com-video-to-gif94a811ffec512930.gif)
-
-## Problems
- * Macros are not reloaded without the figwheel option `:clean-outputs true`
- * Updating the set of used classes in the editable namespace
 
