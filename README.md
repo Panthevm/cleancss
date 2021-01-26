@@ -76,5 +76,5 @@ cleancss/cleancss {:mvn/version "RELEASE"}
 ```
 
 ## Demo
-![demo](https://im3.ezgif.com/tmp/ezgif-3-9bbf1418126c.gif)
+![demo](https://s2.gifyu.com/images/simplescreenrecorder-2021-01-26.gif)
 
