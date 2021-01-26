@@ -4,7 +4,7 @@
   <packaging>jar</packaging>
   <groupId>cleancss</groupId>
   <artifactId>cleancss</artifactId>
-  <version>0.1.2</version>
+  <version>0.1.3</version>
   <name>cleancss</name>
   <description>CleanCSS - is a tool that removes unused CSS stylesheets</description>
   <url>https://github.com/Panthevm/cleancss</url>
