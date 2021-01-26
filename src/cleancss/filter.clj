@@ -157,6 +157,6 @@
 
 (defn make-clean
   [application stylesheets]
-  (cond-> (remove-unused-stylesheets application stylesheets)
-    (:keyframes? application)
-    (-> remove-unused-keyframes second)))
+  (-> application
+      (remove-unused-stylesheets stylesheets)
+      (remove-unused-keyframes) second))
