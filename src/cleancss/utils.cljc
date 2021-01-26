@@ -54,7 +54,7 @@
      (when (:id value)
        (add-identifier (:id value)))
      (when (:class value)
-       (add-class (:class value)))
+       (apply add-class (:class value)))
      (->> (dissoc value :id :class)
           (filter
            (some-fn
