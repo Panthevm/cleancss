@@ -166,6 +166,32 @@
     (is (not (sut/used-member? {:classes #{"home"}} member)))))
 
 
+(deftest get-context
+  (matcho/match
+   (sut/get-context
+    [{:type :style-rule
+      :declarations
+      [{:type :declaration :property "animation" :expression "spin 1s linear infinite"}
+       {:type :declaration :property "--foo"     :expression "green"}
+       {:type :declaration :property "margin"    :expression "calc(calc(1 - var(--foo) - var(--zaz))"}]}])
+   {:animations     #{"spin"}
+    :variables      #{"--foo"}
+    :used-variables #{"--zaz" "--foo"}}))
+
+
+(deftest clear-declarations
+  (matcho/match
+   (sut/clear-declarations
+    {:variables      #{"--foo"}
+     :used-variables #{"--zaz" "--foo"}}
+    [{:property "margin" :expression "var(--FF)"}
+     {:property "--FF"   :expression "green"}
+     {:property "--foo"  :expression "green"}
+     {:property "margin" :expression "var(--foo)"}])
+   [{:property "--foo"  :expression "green"}
+    {:property "margin" :expression "var(--foo)"}]))
+
+
 (deftest make-clean
   (testing "selectors"
     (testing "style rule"
@@ -179,16 +205,16 @@
          :functions   #{}
          :attributes  #{}}
         [{:type :style-rule
-            :selectors
-            [{:type :selector :members [{:type :selector-simple-member :value "h1"}]}
-             {:type :selector :members [{:type :selector-simple-member :value "iframe"}]}]}
-           {:type :style-rule
-            :selectors
-            [{:type :selector :members [{:type :selector-simple-member :value "iframe"}]}]}])
+          :selectors
+          [{:type :selector :members [{:type :selector-simple-member :value "h1"}]}
+           {:type :selector :members [{:type :selector-simple-member :value "iframe"}]}]
+          :declarations [{:property "color" :expression "red"}]}
+         {:type :style-rule
+          :selectors
+          [{:type :selector :members [{:type :selector-simple-member :value "iframe"}]}]}])
        [{:type      :style-rule
          :selectors [{:type    :selector
                       :members [{:type :selector-simple-member :value "h1"}]}]}]))
-
 
     (testing "media rule"
       (matcho/match
@@ -199,7 +225,8 @@
                    :selectors [{:type    :selector
                                 :members [{:type :selector-simple-member :value "h1"}]}
                                {:type    :selector
-                                :members [{:type :selector-simple-member :value "h2"}]}]}]}
+                                :members [{:type :selector-simple-member :value "h2"}]}]
+                   :declarations [{:property "color" :expression "red"}]}]}
          {:type  :media-rule
           :rules [{:type      :style-rule
                    :selectors [{:type    :selector
@@ -224,8 +251,8 @@
                                    :important? false}]}]}
          {:type :keyframes-rule :name "spin"}
          {:type :keyframes-rule :name "ping"}])
-       [{:type :keyframes-rule :name "spin"}
-        {:type  :media-rule
+       [{:type  :media-rule
          :rules [{:type      :style-rule
                   :selectors [{:type    :selector
-                               :members [{:type :selector-simple-member :value "h1"}]}]}]}]))))
+                               :members [{:type :selector-simple-member :value "h1"}]}]}]}
+        {:type :keyframes-rule :name "spin"}]))))

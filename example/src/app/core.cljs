@@ -7,13 +7,9 @@
 
 
 
-
-
-
 (defn view
   []
-  [:section {:class (c "min-h-screen" "bg-red-500" )}])
-
+  [:section {:class (c "min-h-screen" "bg-red-500")}])
 
 
 

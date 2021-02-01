@@ -160,4 +160,4 @@
 (defn from-string
   [stylesheet & [options]]
   (let [reader (CSSReader/readFromString stylesheet StandardCharsets/UTF_8 ECSSVersion/CSS30)]
-    (map protocol/datafy (.getAllRules reader))))
+    (mapv protocol/datafy (.getAllRules reader))))

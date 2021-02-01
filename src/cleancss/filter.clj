@@ -99,64 +99,107 @@
   (loop [processing stylesheets
          processed  []]
     (if processing
-      (let [stylesheet (first processing)]
+      (let [stylesheet       (first processing)
+            type-stylesheet  (:type stylesheet)
+            next-stylesheets (next  processing)]
         (cond
 
-          (= :style-rule (:type stylesheet))
-          (let [updated-stylesheet
-                (update stylesheet :selectors
-                        (partial remove-unused-selectors application))]
-            (if (seq (:selectors updated-stylesheet))
-              (recur (next processing) (cons updated-stylesheet processed))
-              (recur (next processing) processed)))
+          (= :style-rule type-stylesheet)
+          (let [used-selectors (remove-unused-selectors application (:selectors stylesheet))]
+            (if (seq used-selectors)
+              (recur next-stylesheets (conj processed (assoc stylesheet :selectors used-selectors)))
+              (recur next-stylesheets processed)))
 
-          (= :media-rule (:type stylesheet))
-          (let [updated-stylesheet
-                (update stylesheet :rules
-                        (partial remove-unused-stylesheets application))]
-            (if (seq (:rules updated-stylesheet))
-              (recur (next processing) (cons updated-stylesheet processed))
-              (recur (next processing) processed)))
+          (= :media-rule type-stylesheet)
+          (let [used-stylesheets (remove-unused-stylesheets application (:rules stylesheet))]
+            (if (seq used-stylesheets)
+              (recur next-stylesheets (conj processed (assoc stylesheet :rules used-stylesheets)))
+              (recur next-stylesheets processed)))
 
-          (= :keyframes-rule (:type stylesheet))
-          (recur (next processing) (concat processed (list stylesheet)))))
-
+          :else
+          (recur next-stylesheets (conj processed stylesheet))))
       processed)))
 
 
-(defn remove-unused-keyframes
+(defn get-context
   [stylesheets]
-  (loop [processing stylesheets
-         processed  []
-         animations #{}]
-    (if processing
-      (let [stylesheet (first processing)]
+  (loop [nodes   stylesheets
+         context {:animations     #{}
+                  :variables      #{}
+                  :used-variables #{}}]
+    (if nodes
+      (let [node      (first nodes)
+            node-type (:type node)]
         (cond
 
-          (= :style-rule (:type stylesheet))
-          (recur (next processing)
-                 (cons stylesheet processed)
-                 (conj animations
-                       (some->> (:declarations stylesheet)
-                                (filter (comp #{"animation"} :property))
-                                first
-                                :expression
-                                (re-seq #"[^ ]+")
-                                first)))
+          (= :declaration node-type)
+          (cond
 
-          (= :media-rule (:type stylesheet))
-          (let [[media-animations media-stylesheets] (remove-unused-keyframes (:rules stylesheet))]
-            (recur (next processing) (cons stylesheet processed) (into animations media-animations)))
+            (= "animation" (:property node))
+            (let [animation-name (re-find #"\w+" (:expression node))]
+              (recur (next nodes) (update context :animations conj animation-name)))
 
-          (= :keyframes-rule (:type stylesheet))
-          (if (contains? animations (:name stylesheet))
-            (recur (next processing) (cons stylesheet processed) animations)
-            (recur (next processing) processed                   animations))))
-      [animations processed])))
+            (string/starts-with? (:property node) "--")
+            (recur (next nodes) (update context :variables conj (:property node)))
+
+            (string/includes? (:expression node) "var(")
+            (let [used-variables (re-seq #"(?<=var\()(?:.*?)(?=\))" (:expression node))]
+              (recur (next nodes) (update context :used-variables into used-variables)))
+
+            :else (recur (next nodes) context))
+
+          (= :style-rule node-type) (recur (into (next nodes) (:declarations node)) context)
+          (= :media-rule node-type) (recur (into (next nodes) (:rules        node)) context)
+          :else                     (recur (next nodes)                             context)))
+
+      context)))
+
+
+(defn clear-declarations
+  [context declarations]
+  (let [unsuded? (complement contains?)]
+    (remove
+     (fn [declaration]
+       (or (and (string/starts-with? (:property declaration) "--")
+                (unsuded? (:used-variables context) (:property declaration)))
+           (and (string/includes? (:expression declaration) "var(")
+                (some (partial unsuded? (:variables context))
+                      (re-seq #"(?<=var\()(?:.*?)(?=\))" (:expression declaration))))))
+     declarations)))
+
+(defn remove-by-context
+  [context stylesheets]
+  (loop [processing stylesheets
+         processed  []]
+    (if processing
+      (let [stylesheet      (first processing)
+            type-stylesheet (:type stylesheet)]
+        (cond
+
+          (= :style-rule type-stylesheet)
+          (let [new-declarations (clear-declarations context (:declarations stylesheet))]
+            (if (seq new-declarations)
+              (recur (next processing) (conj processed (assoc stylesheet :declarations new-declarations)))
+              (recur (next processing) processed)))
+
+          (= :media-rule type-stylesheet)
+          (let [media-stylesheets (remove-by-context context (:rules stylesheet))]
+            (if (seq media-stylesheets)
+              (recur (next processing) (conj processed (assoc stylesheet :rules media-stylesheets)))
+              (recur (next processing) processed)))
+
+          (= :keyframes-rule type-stylesheet)
+          (if (contains? (:animations context) (:name stylesheet))
+            (recur (next processing) (conj processed stylesheet))
+            (recur (next processing) processed))
+
+          :else
+          (recur (next processing) processed)))
+      processed)))
 
 
 (defn make-clean
   [application stylesheets]
-  (-> application
-      (remove-unused-stylesheets stylesheets)
-      (remove-unused-keyframes) second))
+  (let [used-stylesheets (remove-unused-stylesheets application stylesheets)
+        context          (get-context used-stylesheets)]
+    (remove-by-context context used-stylesheets)))
