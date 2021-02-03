@@ -32,3 +32,12 @@
 
 
 (defn -main [& args])
+
+(comment
+  (def stylesheets
+    (import-from-file
+     {:input-files ["/home/panthevm/study/cleancss/example/resources/public/css/tailwind.min.css"]}))
+
+  (time
+   (dotimes [_ 100]
+     (clean {:types #{"body"}} stylesheets))))

@@ -3,99 +3,87 @@
    [clojure.string :as string]))
 
 
-(defn used-namespace?
-  [namespaces member]
-  (let [namespace-name (->> member :value drop-last (apply str))]
-    (or (string/blank? namespace-name)
-        (contains? namespaces namespace-name))))
-
-
 (defn used-attribute?
   [attributes member]
   (let [operator (-> member :operator :name)]
     (some (fn [[attribute-name attribute-value]]
             (when (= attribute-name (:name member))
-              (cond
-                (= "=" operator)
-                (= attribute-value (:attribute member))
+              (let [attribute (:attribute member)]
+                (cond
+                  (= "=" operator)
+                  (= attribute-value attribute)
 
-                (= "~" operator)
-                (let [values (string/split attribute-value #" ")]
-                  (some #{(:attribute member)} values ))
+                  (= "~" operator)
+                  (let [values (string/split attribute-value #" ")]
+                    (some #{attribute} values))
 
-                (= "|" operator)
-                (or (= attribute-value (:attribute member))
-                    (string/starts-with? attribute-value
-                                         (str (:attribute member) "-")))
+                  (= "|" operator)
+                  (or (= attribute-value attribute)
+                      (string/starts-with? attribute-value (str attribute "-")))
 
-                (= "^" operator)
-                (string/starts-with? attribute-value (:attribute member))
+                  (= "^" operator)
+                  (string/starts-with? attribute-value attribute)
 
-                (= "$" operator)
-                (string/ends-with? attribute-value (:attribute member))
+                  (= "$" operator)
+                  (string/ends-with? attribute-value attribute)
 
-                (= "*" operator)
-                (string/includes? attribute-value (:attribute member))
+                  (= "*" operator)
+                  (string/includes? attribute-value attribute)
 
-                :else true)))
+                  :else true))))
           attributes)))
 
 
-(declare used-selector?)
+(declare remove-unused-selectors)
 
 
 (defn used-member?
-  [application member]
-  (cond
-    (= :selector-simple-member (:type member))
+  [app member]
+  (let [member-type (:type member)]
     (cond
+      (= :selector-simple-member member-type)
+      (let [member-value (:value member)]
+        (cond
 
-      (string/starts-with? (:value member) ".")
-      (contains? (:classes application) (subs (:value member) 1))
+          (string/starts-with? member-value ".")
+          (contains? (:classes app) (subs member-value 1))
 
-      (string/starts-with? (:value member) ":")
-      (some (partial string/starts-with? (:value member))
-            (:pseudos application))
+          (string/starts-with? member-value "#")
+          (contains? (:identifiers app) (subs member-value 1))
 
-      (string/starts-with? (:value member) "#")
-      (contains? (:identifiers application) (subs (:value member) 1))
+          (string/starts-with? member-value ":")
+          (some (partial string/starts-with? member-value) (:pseudos app))
 
-      (string/ends-with? (:value member) "|")
-      (or (= "|" (:value member))
-          (used-namespace? (:namespaces application) member))
+          (string/ends-with? member-value "|")
+          true
 
-      :else
-      (contains? (:types application) (:value member)))
+          :else
+          (contains? (:types app) (:value member))))
 
-    (= :selector-attribute (:type member))
-    (used-attribute? (:attributes application) member)
+      (= :selector-attribute member-type)
+      (used-attribute? (:attributes app) member)
 
-    (= :selector-member-function (:type member))
-    (some (partial string/starts-with? (:name member))
-          (:functions application))
+      (= :selector-member-function member-type)
+      (some (partial string/starts-with? (:name member)) (:functions app))
 
-    (= :selector-combinator (:type member))
-    true
+      (= :selector-combinator member-type)
+      true
 
-    (= :selector-member-not (:type member))
-    (not (every? (partial used-selector? application)
-                 (:selectors member)))))
-
-
-(defn used-selector?
-  [selectors selector]
-  (every? (partial used-member? selectors)
-          (:members selector)))
+      (= :selector-member-not member-type)
+      (empty? (remove-unused-selectors app (:selectors member))))))
 
 
 (defn remove-unused-selectors
-  [application selectors]
-  (filter (partial used-selector? application)
+  [app selectors]
+  (filter (fn [selector]
+            (every? (fn [member]
+                      (used-member? app member))
+                    (:members selector)))
           selectors))
 
 
 (defn remove-unused-stylesheets
-  [application stylesheets]
+  [app stylesheets]
   (loop [processing stylesheets
          processed  []]
     (if processing
@@ -105,13 +93,13 @@
         (cond
 
           (= :style-rule type-stylesheet)
-          (let [used-selectors (remove-unused-selectors application (:selectors stylesheet))]
+          (let [used-selectors (remove-unused-selectors app (:selectors stylesheet))]
             (if (seq used-selectors)
               (recur next-stylesheets (conj processed (assoc stylesheet :selectors used-selectors)))
               (recur next-stylesheets processed)))
 
           (= :media-rule type-stylesheet)
-          (let [used-stylesheets (remove-unused-stylesheets application (:rules stylesheet))]
+          (let [used-stylesheets (remove-unused-stylesheets app (:rules stylesheet))]
             (if (seq used-stylesheets)
               (recur next-stylesheets (conj processed (assoc stylesheet :rules used-stylesheets)))
               (recur next-stylesheets processed)))

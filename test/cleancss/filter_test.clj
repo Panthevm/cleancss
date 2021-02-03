@@ -13,15 +13,7 @@
 
     (testing "ns|"
       (def member
-        {:type :selector-simple-member :value "foo|"})
-
-      (is      (sut/used-member? {:namespaces #{"foo"}} member))
-      (is (not (sut/used-member? {:namespaces #{"bar"}} member))))
-
-
-    (testing "|"
-      (def member
-        {:type :selector-simple-member :value "|"})
+        {:type :selector-simple-member :value "ns|"})
 
       (is (sut/used-member? {:types #{"|"}} member)))
 
