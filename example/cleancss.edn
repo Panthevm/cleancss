@@ -1,7 +1,7 @@
 {:watch-dirs ["src"]
  :application
- {:functions :all
-  :pseudos   :all
+ {:functions #{}
+  :pseudos   #{}
   :types     #{"*" "html" "body" "section"}}
 
  :build

@@ -3,16 +3,9 @@
    [reagent.dom    :as dom]
    [cleancss.utils :refer [c]]))
 
-
-
-
-
 (defn view
   []
   [:section {:class (c "min-h-screen" "bg-red-500")}])
-
-
-
 
 (defn ^:after-load mount
   []

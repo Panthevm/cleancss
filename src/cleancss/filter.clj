@@ -158,6 +158,7 @@
 (defn remove-by-context
   [context stylesheets]
   (loop [processing stylesheets
+         schema     {}
          processed  []]
     (if processing
       (let [stylesheet      (first processing)
@@ -167,23 +168,29 @@
           (= :style-rule type-stylesheet)
           (let [new-declarations (clear-declarations context (:declarations stylesheet))]
             (if (seq new-declarations)
-              (recur (next processing) (conj processed (assoc stylesheet :declarations new-declarations)))
-              (recur (next processing) processed)))
+              (let [new-stylesheet (assoc stylesheet :declarations new-declarations)
+                    members        (->> stylesheet :selectors (mapcat (comp (partial map :value) :members)) vec)
+                    new-schema     (if (contains? schema members)
+                                     (update-in schema [members :declarations] into new-declarations)
+                                     (assoc  schema members new-stylesheet))]
+                (recur (next processing) new-schema []))
+              (recur (next processing) schema [])))
 
           (= :media-rule type-stylesheet)
           (let [media-stylesheets (remove-by-context context (:rules stylesheet))]
             (if (seq media-stylesheets)
-              (recur (next processing) (conj processed (assoc stylesheet :rules media-stylesheets)))
-              (recur (next processing) processed)))
+              (recur (next processing) schema (conj processed (assoc stylesheet :rules media-stylesheets)))
+              (recur (next processing) schema processed)))
 
           (= :keyframes-rule type-stylesheet)
           (if (contains? (:animations context) (:name stylesheet))
-            (recur (next processing) (conj processed stylesheet))
-            (recur (next processing) processed))
+            (recur (next processing) schema (conj processed stylesheet))
+            (recur (next processing) schema processed))
 
           :else
-          (recur (next processing) processed)))
-      processed)))
+          (recur (next processing) schema (conj processed stylesheet))))
+
+      (into processed (vals schema)))))
 
 
 (defn make-clean
