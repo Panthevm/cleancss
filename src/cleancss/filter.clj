@@ -13,21 +13,21 @@
                   (= "=" operator)
                   (= attribute-value attribute)
 
-                  (= "~" operator)
+                  (= "~=" operator)
                   (let [values (string/split attribute-value #" ")]
                     (some #{attribute} values))
 
-                  (= "|" operator)
+                  (= "|=" operator)
                   (or (= attribute-value attribute)
                       (string/starts-with? attribute-value (str attribute "-")))
 
-                  (= "^" operator)
+                  (= "^=" operator)
                   (string/starts-with? attribute-value attribute)
 
-                  (= "$" operator)
+                  (= "$=" operator)
                   (string/ends-with? attribute-value attribute)
 
-                  (= "*" operator)
+                  (= "*=" operator)
                   (string/includes? attribute-value attribute)
 
                   :else true))))
@@ -179,7 +179,7 @@
           (let [new-declarations (clear-declarations context (:declarations stylesheet))]
             (if (seq new-declarations)
               (let [new-stylesheet (assoc stylesheet :declarations new-declarations)
-                    members        (->> stylesheet :selectors (mapcat (comp (partial map :value) :members)) vec)
+                    members        (-> stylesheet :selectors hash)
                     new-schema     (if (contains? schema members)
                                      (update-in schema [members :declarations] into new-declarations)
                                      (assoc  schema members new-stylesheet))]

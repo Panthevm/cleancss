@@ -1,250 +1,202 @@
 (ns cleancss.filter-test
   (:require
    [cleancss.filter :as    sut]
+   [cleancss.core   :as    core]
    [clojure.test    :refer :all]
-   [matcho.core     :as    matcho]))
+   [matcho.core     :as    matcho :refer [match]]))
+
+(defn- clean
+  [app css]
+  (->> css
+       (core/import-from-string)
+       (sut/make-clean app)
+       (core/export-to-string)))
+
+(deftest style-rule
+  (testing "Remove unused selectors"
+    (testing "type"
+      (match
+       (clean
+        {:types #{"A"}}
+        "A{o:o}
+         B{o:o}")
+       "A{o:o}"))
+
+    (testing "class"
+      (match
+       (clean
+        {:classes #{"A"}}
+        ".A{o:o}
+         .B{o:o}")
+       ".A{o:o}"))
+
+    (testing "identifier"
+      (match
+       (clean
+        {:identifiers #{"A"}}
+        "#A{o:o}
+         #B{o:o}")
+       "#A{o:o}"))
+
+    (testing "pseudo"
+      (match
+       (clean
+        {:pseudos #{":A"}}
+        ":A{o:o}
+         :B{o:o}")
+       ":A{o:o}"))
+
+    (testing "attribute"
+      (testing "single"
+        (match
+         (clean
+          {:attributes #{["A"]}}
+          "[A]{o:o}
+           [B]{o:o}")
+         "[A]{o:o}"))
+
+      (testing "="
+        (match
+         (clean
+          {:attributes #{["A" "W"]}}
+          "[A=W]{o:o}
+           [A=G]{o:o}
+           [B=W]{o:o}")
+         "[A=W]{o:o}"))
+
+      (testing "~"
+        (match
+         (clean
+          {:attributes #{["A" "C W T"]}}
+          "[A~=W]{o:o}
+           [A~=G]{o:o}
+           [B~=W]{o:o}")
+         "[A~=W]{o:o}"))
+
+      (testing "^"
+        (match
+         (clean
+          {:attributes #{["A" "WT"]}}
+          "[A^=W]{o:o}
+           [A^=T]{o:o}")
+         "[A^=W]{o:o}"))
+
+      (testing "$"
+        (match
+         (clean
+          {:attributes #{["A" "WT"]}}
+          "[A$=T]{o:o}
+           [A$=W]{o:o}")
+         "[A$=T]{o:o}"))
+
+      (testing "$"
+        (match
+         (clean
+          {:attributes #{["A" "WT"]}}
+          "[A$=T]{o:o}
+           [A$=W]{o:o}")
+         "[A$=T]{o:o}"))
+
+      (testing "*"
+        (match
+         (clean
+          {:attributes #{["A" "CWT"]}}
+          "[A*=W]{o:o}
+           [A*=G]{o:o}")
+         "[A*=W]{o:o}"))
+
+      (testing "|"
+        (match
+         (clean
+          {:attributes #{["A" "C-S"]
+                         ["H" "C"]}}
+          "[A|=C]{o:o}
+           [H|=C]{o:o}
+           [A|=S]{o:o}
+           [H|=S]{o:o}")
+         (str
+          "[A|=C]{o:o}"
+          "[H|=C]{o:o}"))))
+
+    (testing "not"
+      (match
+       (clean
+        {:attributes #{["A"]}}
+        ":not([B]){o:o}
+         :not([A]){o:o}")
+       ":not([B]){o:o}"))
+
+    (testing "combinator"
+      (match
+       (clean
+        {:types #{"A" "B"}}
+        "A B{o:o}
+         A>B{o:o}
+         A+B{o:o}
+         A~B{o:o}
+         A C{o:o}
+         A>C{o:o}
+         A+C{o:o}
+         A~C{o:o}")
+       (str
+        "A B{o:o}"
+        "A>B{o:o}"
+        "A+B{o:o}"
+        "A~B{o:o}"))))
 
 
-(deftest used-member?
+  (testing "remove empty declarations"
+    (match
+     (clean
+      {:types #{"A"}}
+      "A{}")
+     ""))
+
+  (testing "Merge duplicate style declaration"
+    (match
+     (clean
+      {:types #{"A"}}
+      "A{a:1;a:2;b:3}")
+     "A{a:2;b:3}"))
 
 
-  (testing "type selectors"
-    ;; https://www.w3.org/TR/selectors-3/#type-selectors
-
-    (testing "ns|"
-      (def member
-        {:type :selector-simple-member :value "ns|"})
-
-      (is (sut/used-member? {:types #{"|"}} member)))
-
-
-    (testing "E"
-      (def member
-        {:type :selector-simple-member :value "h1"})
-
-      (is      (sut/used-member? {:types #{"h1"}} member))
-      (is (not (sut/used-member? {:types #{"h2"}} member)))))
+  (testing "Merge disabled stylesheet"
+    (match
+     (clean
+      {:types #{"A"}}
+      "A{a:a}
+       A{b:b}")
+     "A{b:b;a:a}"))
 
 
-  (testing "attribute selectors"
-    ;; https://www.w3.org/TR/2018/REC-selectors-3-20181106/#attribute-selectors
+  (testing "Remove unused variables"
 
-    (testing "[foo]"
-      (def member
-        {:type :selector-attribute :name "foo"})
+    (match
+     (clean
+      {:types #{"A" "B"}}
+      "A{--a:1}")
+     "")
 
-      (is      (sut/used-member? {:attributes #{["foo"]}} member))
-      (is (not (sut/used-member? {:attributes #{["bar"]}} member))))
+    (match
+     (clean
+      {:types #{"A"}}
+      "A{--a:1;b:var(--a)}")
+     "A{--a:1;b:var(--a)}")
 
-
-    (testing "[foo`<operator>`bar]"
-
-
-      (testing "operator ="
-        (def member
-          {:type      :selector-attribute
-           :name      "hreflang"
-           :attribute "fr"
-           :operator  {:type :attribute-operator :name "="}})
-
-        (is      (sut/used-member? {:attributes #{["hreflang" "fr"]}} member))
-        (is (not (sut/used-member? {:attributes #{["hreflang" "en"]}} member)))
-        (is (not (sut/used-member? {:attributes #{["class"    "fr"]}} member))))
+    (match
+     (clean
+      {:types #{"A" "B"}}
+      "A{--a:1}
+       B{b:var(--a)}")
+     "A{--a:1}B{b:var(--a)}")))
 
 
-      (testing "operator ~"
-        (def member
-          {:type      :selector-attribute
-           :name      "hreflang"
-           :attribute "fr"
-           :operator  {:type :attribute-operator :name "~"}})
+;; TODO
+(deftest media-rule
+  (is true)
+  )
 
-        (is      (sut/used-member? {:attributes #{["hreflang" "en fr"]}} member))
-        (is (not (sut/used-member? {:attributes #{["hreflang" "en ru"]}} member))))
-
-
-      (testing "operator |"
-        (def member
-          {:type      :selector-attribute
-           :name      "hreflang"
-           :attribute "en"
-           :operator  {:type :attribute-operator :name "|"}})
-
-        (is      (sut/used-member? {:attributes #{["hreflang" "en-us"]}} member))
-        (is      (sut/used-member? {:attributes #{["hreflang" "en"]}}    member))
-        (is (not (sut/used-member? {:attributes #{["hreflang" "ru"]}}    member))))
-
-
-      (testing "operator ^"
-        (def member
-          {:type      :selector-attribute
-           :name      "src"
-           :attribute "image/"
-           :operator  {:type :attribute-operator :name "^"}})
-
-        (is      (sut/used-member? {:attributes #{["src" "image/photo.png"]}} member))
-        (is (not (sut/used-member? {:attributes #{["src" "video/photo.png"]}} member))))
-
-
-      (testing "operator $"
-        (def member
-          {:type      :selector-attribute
-           :name      "src"
-           :attribute ".png"
-           :operator  {:type :attribute-operator :name "$"}})
-
-        (is      (sut/used-member? {:attributes #{["src" "image/photo.png"]}} member))
-        (is (not (sut/used-member? {:attributes #{["src" "image/photo.jpg"]}} member))))
-
-
-      (testing "operator *"
-        (def member
-          {:type      :selector-attribute
-           :name      "src"
-           :attribute "photo"
-           :operator  {:type :attribute-operator :name "*"}})
-
-        (is      (sut/used-member? {:attributes #{["src" "image/photo.png"]}} member))
-        (is (not (sut/used-member? {:attributes #{["src" "image/memes.jpg"]}} member))))))
-
-
-  (testing "pseudo"
-
-
-    (testing "structural"
-      ;; https://www.w3.org/TR/selectors-3/#structural-pseudos
-      (def member
-        {:type :selector-simple-member :value "::before"})
-
-      (is      (sut/used-member? {:pseudos #{"::before"}} member))
-      (is (not (sut/used-member? {:pseudos #{"::after"}}  member))))
-
-
-    (testing "negation"
-      ;; https://www.w3.org/TR/2018/REC-selectors-3-20181106/#negation
-      (def member
-        {:type      :selector-member-not
-         :selectors [{:type :selector
-                      :members [{:type :selector-attribute
-                                 :name "disabled"}]}]})
-
-      (is      (sut/used-member? {:attributes #{["hidden"]}}   member))
-      (is (not (sut/used-member? {:attributes #{["disabled"]}} member)))))
-
-
-  (testing "#id"
-    ;; https://www.w3.org/TR/2018/REC-selectors-3-20181106/#id-selectors
-    (def member
-      {:type :selector-simple-member :value "#id"})
-
-    (is      (sut/used-member? {:identifiers #{"id"}}   member))
-    (is (not (sut/used-member? {:identifiers #{"save"}} member))))
-
-
-  (testing "combinators"
-    ;; https://www.w3.org/TR/selectors-3/#descendant-combinators
-    (is (sut/used-member? {} {:type :selector-combinator :name " "}))
-    (is (sut/used-member? {} {:type :selector-combinator :name ">"}))
-    (is (sut/used-member? {} {:type :selector-combinator :name "+"}))
-    (is (sut/used-member? {} {:type :selector-combinator :name "~"})))
-
-
-  (testing "class html"
-    ;; https://www.w3.org/TR/selectors-3/#class-html
-    (def member
-      {:type :selector-simple-member :value ".name"})
-
-    (is      (sut/used-member? {:classes #{"name"}} member))
-    (is (not (sut/used-member? {:classes #{"home"}} member)))))
-
-
-(deftest get-context
-  (matcho/match
-   (sut/get-context
-    [{:type :style-rule
-      :declarations
-      [{:type :declaration :property "animation" :expression "spin 1s linear infinite"}
-       {:type :declaration :property "--foo"     :expression "green"}
-       {:type :declaration :property "margin"    :expression "calc(calc(1 - var(--foo) - var(--zaz))"}]}])
-   {:animations     #{"spin"}
-    :variables      #{"--foo"}
-    :used-variables #{"--zaz" "--foo"}}))
-
-
-(deftest clear-declarations
-  (matcho/match
-   (sut/clear-declarations
-    {:variables      #{"--foo"}
-     :used-variables #{"--zaz" "--foo"}}
-    [{:property "margin" :expression "var(--FF)"}
-     {:property "--FF"   :expression "green"}
-     {:property "--foo"  :expression "green"}
-     {:property "margin" :expression "var(--foo)"}])
-   [{:property "--foo"  :expression "green"}
-    {:property "margin" :expression "var(--foo)"}]))
-
-
-(deftest make-clean
-  (testing "selectors"
-    (testing "style rule"
-      (matcho/match
-       (sut/make-clean
-        {:namespaces  #{}
-         :types       #{"h1"}
-         :identifiers #{}
-         :classes     #{}
-         :pseudos     #{}
-         :functions   #{}
-         :attributes  #{}}
-        [{:type :style-rule
-          :selectors
-          [{:type :selector :members [{:type :selector-simple-member :value "h1"}]}
-           {:type :selector :members [{:type :selector-simple-member :value "iframe"}]}]
-          :declarations [{:property "color" :expression "red"}]}
-         {:type :style-rule
-          :selectors
-          [{:type :selector :members [{:type :selector-simple-member :value "iframe"}]}]}])
-       [{:type      :style-rule
-         :selectors [{:type    :selector
-                      :members [{:type :selector-simple-member :value "h1"}]}]}]))
-
-    (testing "media rule"
-      (matcho/match
-       (sut/make-clean
-        {:types #{"h1"}}
-        [{:type  :media-rule
-          :rules [{:type      :style-rule
-                   :selectors [{:type    :selector
-                                :members [{:type :selector-simple-member :value "h1"}]}
-                               {:type    :selector
-                                :members [{:type :selector-simple-member :value "h2"}]}]
-                   :declarations [{:property "color" :expression "red"}]}]}
-         {:type  :media-rule
-          :rules [{:type      :style-rule
-                   :selectors [{:type    :selector
-                                :members [{:type :selector-simple-member :value "h2"}]}]}]}])
-       [{:type  :media-rule
-         :rules [{:type      :style-rule
-                  :selectors [{:type    :selector
-                               :members [{:type :selector-simple-member :value "h1"}]}]}]}]))
-
-
-    (testing "keyframes-rule"
-      (matcho/match
-       (sut/make-clean
-        {:types #{"h1"}}
-        [{:type  :media-rule
-          :rules [{:type         :style-rule
-                   :selectors    [{:type    :selector
-                                   :members [{:type :selector-simple-member :value "h1"}]}]
-                   :declarations [{:type       :declaration
-                                   :property   "animation"
-                                   :expression "spin 1s linear infinite"
-                                   :important? false}]}]}
-         {:type :keyframes-rule :name "spin"}
-         {:type :keyframes-rule :name "ping"}])
-       [{:type  :media-rule
-         :rules [{:type      :style-rule
-                  :selectors [{:type    :selector
-                               :members [{:type :selector-simple-member :value "h1"}]}]}]}
-        {:type :keyframes-rule :name "spin"}]))))
+;; TODO
+(deftest keyframe-rule
+  (is true)
+  )

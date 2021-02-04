@@ -36,7 +36,6 @@
 
 (defmulti datafy :type)
 
-
 (defmethod datafy :declaration
   [schema]
   (CSSDeclaration.
@@ -170,7 +169,7 @@
         settings-object  (CSSWriterSettings. ECSSVersion/CSS30 true)
         writer-object    (doto (CSSWriter. settings-object)
                            (.setWriteHeaderText false))]
-    (doseq [node schema]
+    (doseq [node (remove nil? schema)]
       (.addRule cascading-object (datafy node)))
     (.getCSSAsString writer-object cascading-object)))
 
@@ -182,7 +181,7 @@
         writer-object    (doto (CSSWriter. settings-object)
                            (.setWriteHeaderText false)
                            (.setContentCharset "UTF-8"))]
-    (doseq [style stylesheets]
+    (doseq [style (remove nil? stylesheets)]
       (.addRule cascading-object (datafy style)))
     (with-open [writer (io/writer (-> configuration :output-file))]
       (.write writer (.getCSSAsString writer-object cascading-object)))))
