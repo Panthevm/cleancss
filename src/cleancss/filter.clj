@@ -155,6 +155,16 @@
                       (re-seq #"(?<=var\()(?:.*?)(?=\))" (:expression declaration))))))
      declarations)))
 
+
+(defn remove-duplicate-declarations
+  [declarations]
+  (vals
+   (reduce
+    (fn [accumulator declaration]
+      (assoc accumulator (:property declaration) declaration))
+    {} declarations)))
+
+
 (defn remove-by-context
   [context stylesheets]
   (loop [processing stylesheets
@@ -190,7 +200,10 @@
           :else
           (recur (next processing) schema (conj processed stylesheet))))
 
-      (into processed (vals schema)))))
+      (into processed
+            (map (fn [[_ style-rule]]
+                   (update style-rule :declarations remove-duplicate-declarations))
+                 schema)))))
 
 
 (defn make-clean
