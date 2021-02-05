@@ -104,7 +104,7 @@
               (recur next-stylesheets (conj processed (assoc stylesheet :rules used-stylesheets)))
               (recur next-stylesheets processed)))
 
-          :else
+          stylesheet
           (recur next-stylesheets (conj processed stylesheet))))
       processed)))
 
