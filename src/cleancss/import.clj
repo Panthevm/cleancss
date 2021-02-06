@@ -1,7 +1,8 @@
 (ns cleancss.import
   (:require
    [clojure.core.protocols :as protocol]
-   [clojure.java.io        :as io])
+   [clojure.java.io        :as io]
+   [clojure.string         :as string])
 
   (:import
    [com.helger.css.reader
@@ -46,8 +47,20 @@
 (extend-type CSSSelectorSimpleMember
   protocol/Datafiable
   (datafy [object]
-    {:type  :selector-simple-member
-     :value (.getValue object)}))
+    (let [value (.getValue object)
+          group (cond
+                  (string/starts-with? value ".") :class
+                  (string/starts-with? value "#") :identifier
+                  (string/starts-with? value ":") :pseudo
+                  :else                           :type)]
+      {:type  :selector-simple-member
+       :value value
+       :group group
+       :name  (cond
+                ;; :not(2n + 1) - not function??
+                (= :pseudo group) (-> value (subs 1) (string/split #"\(") first)
+                (= :type   group) value
+                :else             (subs value 1))})))
 
 
 (extend-type ECSSSelectorCombinator

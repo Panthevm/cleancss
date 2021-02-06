@@ -36,29 +36,20 @@
 
 (declare remove-unused-selectors)
 
-
 (defn used-member?
   [app member]
   (let [member-type (:type member)]
     (cond
+
       (= :selector-simple-member member-type)
-      (let [member-value (:value member)]
+      (let [member-group (:group member)]
         (cond
-
-          (string/starts-with? member-value ".")
-          (contains? (:classes app) (subs member-value 1))
-
-          (string/starts-with? member-value "#")
-          (contains? (:identifiers app) (subs member-value 1))
-
-          (string/starts-with? member-value ":")
-          (some (partial string/starts-with? member-value) (:pseudos app))
-
-          (string/ends-with? member-value "|")
-          true
-
-          :else
-          (contains? (:types app) (:value member))))
+          (= :class      member-group) (contains? (:classes     app) (:name  member))
+          (= :type       member-group) (contains? (:types       app) (:name  member))
+          (= :identifier member-group) (contains? (:identifiers app) (:name  member))
+          (= :pseudo     member-group)
+          (some (partial string/starts-with? (:value member)) (:pseudos app))
+          :else true))
 
       (= :selector-attribute member-type)
       (used-attribute? (:attributes app) member)
@@ -84,30 +75,30 @@
 
 (defn remove-unused-stylesheets
   [app stylesheets]
-  (loop [processing stylesheets
-         processed  []]
-    (if processing
-      (let [stylesheet       (first processing)
-            type-stylesheet  (:type stylesheet)
-            next-stylesheets (next  processing)]
+  (loop [nodes       (seq stylesheets)
+         accumulator []]
+    (if nodes
+      (let [node       (first nodes)
+            next-nodes (next  nodes)
+            node-type  (:type node)]
         (cond
 
-          (= :style-rule type-stylesheet)
-          (let [used-selectors (remove-unused-selectors app (:selectors stylesheet))]
-            (if (seq used-selectors)
-              (recur next-stylesheets (conj processed (assoc stylesheet :selectors used-selectors)))
-              (recur next-stylesheets processed)))
+          (= :style-rule node-type)
+          (let [selectors (remove-unused-selectors app (:selectors node))]
+            (if (seq selectors)
+              (recur next-nodes (conj accumulator (assoc node :selectors selectors)))
+              (recur next-nodes accumulator)))
 
-          (= :media-rule type-stylesheet)
-          (let [used-stylesheets (remove-unused-stylesheets app (:rules stylesheet))]
-            (if (seq used-stylesheets)
-              (recur next-stylesheets (conj processed (assoc stylesheet :rules used-stylesheets)))
-              (recur next-stylesheets processed)))
+          (= :media-rule node-type)
+          (let [rules (remove-unused-stylesheets app (:rules node))]
+            (if (seq rules)
+              (recur next-nodes (conj accumulator (assoc node :rules rules)))
+              (recur next-nodes accumulator)))
 
-          stylesheet
-          (recur next-stylesheets (conj processed stylesheet))))
-      processed)))
+          :else
+          (recur next-nodes (conj accumulator node))))
 
+      accumulator)))
 
 (defn get-context
   [stylesheets]
