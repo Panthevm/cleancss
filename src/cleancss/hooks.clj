@@ -45,7 +45,6 @@
 
 (defn build
   [_]
-  (prn @utils/classes)
   (->> stylesheets
        (core/clean          (-> configuration :application application-update))
        (core/export-to-file (-> configuration :build :export))))
@@ -75,7 +74,6 @@
              (apply max-key :modified)
              :ns)]
 
-    (prn updated-namespace)
     (swap! utils/identifiers (partial update-state updated-namespace exists-namespaces))
     (swap! utils/attributes  (partial update-state updated-namespace exists-namespaces))
     (swap! utils/classes     (partial update-state updated-namespace exists-namespaces))))

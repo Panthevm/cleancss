@@ -38,10 +38,20 @@
 (extend-type CSSDeclaration
   protocol/Datafiable
   (datafy [object]
-    {:type       :declaration
-     :property   (-> object .getProperty)
-     :expression (-> object .getExpressionAsCSSString)
-     :important? (-> object .isImportant)}))
+    (let [property   (-> object .getProperty)
+          expression (-> object .getExpressionAsCSSString)
+          meta-type  (cond
+                       (= property "animation")            :animation
+                       (string/starts-with? property "--") :variable)]
+      {:type       :declaration
+       :property   property
+       :expression expression
+       :important? (-> object .isImportant)
+       :meta       {:type      meta-type
+                    :variables (when (string/includes? expression "var(")
+                                 (re-seq #"(?<=var\()(?:.*?)(?=\))" expression))
+                    :animation (when (= :animation meta-type)
+                                 (re-find #"\w+" expression))}})))
 
 
 (extend-type CSSSelectorSimpleMember
@@ -57,8 +67,7 @@
        :value value
        :group group
        :name  (cond
-                ;; :not(2n + 1) - not function??
-                (= :pseudo group) (-> value (subs 1) (string/split #"\(") first)
+                (= :pseudo group) (-> value (string/split #"\(") first)
                 (= :type   group) value
                 :else             (subs value 1))})))
 
@@ -87,9 +96,11 @@
 (extend-type CSSSelectorMemberFunctionLike
   protocol/Datafiable
   (datafy [object]
-    {:type       :selector-member-function
-     :name       (-> object .getFunctionName)
-     :expression (-> object .getParameterExpression .getAsCSSString)}))
+    (let [function (-> object .getFunctionName)]
+      {:type       :selector-member-function
+       :name       function
+       :function   (->> function drop-last (apply str))
+       :expression (-> object .getParameterExpression .getAsCSSString)})))
 
 
 (extend-type CSSSelectorAttribute

@@ -50,6 +50,22 @@
       ":A{o:o}"))
 
 
+  (testing "unused nth-*"
+    (defcase {:pseudos #{":nth-child"}}
+      ":nth-child(n){o:o}
+       :nth-of-type(n){o:o}"
+
+      ":nth-child(n){o:o}"))
+
+
+  (testing "unused functions"
+    (defcase {:functions #{":A"}}
+      ":A(n){o:o}
+       :B(n){o:o}"
+
+      ":A(n){o:o}"))
+
+
   (testing "unused single attribute"
     (defcase {:attributes #{["A"]}}
       "[A]{o:o}
@@ -117,7 +133,7 @@
       ":not([B]){o:o}
        :not([A]){o:o}"
 
-      ":not([B]){o:o}"))
+      ":not([A]){o:o}"))
 
 
   (testing "combinators"

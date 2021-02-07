@@ -4,7 +4,7 @@
 
 
 (defn used-attribute?
-  [attributes member]
+  [app member]
   (let [operator (-> member :operator :name)]
     (some (fn [[attribute-name attribute-value]]
             (when (= attribute-name (:name member))
@@ -15,7 +15,7 @@
 
                   (= "~=" operator)
                   (let [values (string/split attribute-value #" ")]
-                    (some #{attribute} values))
+                    (some #(= attribute %) values))
 
                   (= "|=" operator)
                   (or (= attribute-value attribute)
@@ -31,37 +31,32 @@
                   (string/includes? attribute-value attribute)
 
                   :else true))))
-          attributes)))
+          (:attributes app))))
+
+
+(defn used-selector?
+  [app member]
+  (let [member-group (:group member)]
+    (cond
+      (= :class      member-group) (contains? (:classes     app) (:name member))
+      (= :type       member-group) (contains? (:types       app) (:name member))
+      (= :pseudo     member-group) (contains? (:pseudos     app) (:name member))
+      (= :identifier member-group) (contains? (:identifiers app) (:name member))
+      :else true)))
 
 
 (declare remove-unused-selectors)
+
 
 (defn used-member?
   [app member]
   (let [member-type (:type member)]
     (cond
-
-      (= :selector-simple-member member-type)
-      (let [member-group (:group member)]
-        (cond
-          (= :class      member-group) (contains? (:classes     app) (:name  member))
-          (= :type       member-group) (contains? (:types       app) (:name  member))
-          (= :identifier member-group) (contains? (:identifiers app) (:name  member))
-          (= :pseudo     member-group)
-          (some (partial string/starts-with? (:value member)) (:pseudos app))
-          :else true))
-
-      (= :selector-attribute member-type)
-      (used-attribute? (:attributes app) member)
-
-      (= :selector-member-function member-type)
-      (some (partial string/starts-with? (:name member)) (:functions app))
-
-      (= :selector-combinator member-type)
-      true
-
-      (= :selector-member-not member-type)
-      (empty? (remove-unused-selectors app (:selectors member))))))
+      (= :selector-simple-member   member-type) (used-selector?  app member)
+      (= :selector-attribute       member-type) (used-attribute? app member)
+      (= :selector-member-function member-type) (contains? (:functions app) (:function member))
+      (= :selector-member-not      member-type) (seq (remove-unused-selectors app (:selectors member)))
+      :else true)))
 
 
 (defn remove-unused-selectors
@@ -76,7 +71,7 @@
 (defn remove-unused-stylesheets
   [app stylesheets]
   (loop [nodes       (seq stylesheets)
-         accumulator []]
+         accumulator (transient [])]
     (if nodes
       (let [node       (first nodes)
             next-nodes (next  nodes)
@@ -86,19 +81,20 @@
           (= :style-rule node-type)
           (let [selectors (remove-unused-selectors app (:selectors node))]
             (if (seq selectors)
-              (recur next-nodes (conj accumulator (assoc node :selectors selectors)))
+              (recur next-nodes (conj! accumulator (assoc node :selectors selectors)))
               (recur next-nodes accumulator)))
 
           (= :media-rule node-type)
           (let [rules (remove-unused-stylesheets app (:rules node))]
             (if (seq rules)
-              (recur next-nodes (conj accumulator (assoc node :rules rules)))
+              (recur next-nodes (conj! accumulator (assoc node :rules rules)))
               (recur next-nodes accumulator)))
 
           :else
-          (recur next-nodes (conj accumulator node))))
+          (recur next-nodes (conj! accumulator node))))
 
-      accumulator)))
+      (persistent! accumulator))))
+
 
 (defn get-context
   [stylesheets]
@@ -107,29 +103,29 @@
                   :variables      #{}
                   :used-variables #{}}]
     (if nodes
-      (let [node      (first nodes)
-            node-type (:type node)]
+      (let [node       (first nodes)
+            next-nodes (next  nodes)
+            node-type  (:type node)]
         (cond
 
           (= :declaration node-type)
-          (cond
+          (let [meta-type (-> node :meta :type)]
+            (cond
 
-            (= "animation" (:property node))
-            (let [animation-name (re-find #"\w+" (:expression node))]
-              (recur (next nodes) (update context :animations conj animation-name)))
+              (= :animation meta-type)
+              (recur next-nodes (update context :animations conj (-> node :meta :animation)))
 
-            (string/starts-with? (:property node) "--")
-            (recur (next nodes) (update context :variables conj (:property node)))
+              (= :variable meta-type)
+              (recur next-nodes (update context :variables conj (:property node)))
 
-            (string/includes? (:expression node) "var(")
-            (let [used-variables (re-seq #"(?<=var\()(?:.*?)(?=\))" (:expression node))]
-              (recur (next nodes) (update context :used-variables into used-variables)))
+              (-> node :meta :variables)
+              (recur next-nodes (update context :used-variables into (-> node :meta :variables)))
 
-            :else (recur (next nodes) context))
+              :else (recur next-nodes context)))
 
-          (= :style-rule node-type) (recur (into (next nodes) (:declarations node)) context)
-          (= :media-rule node-type) (recur (into (next nodes) (:rules        node)) context)
-          :else                     (recur (next nodes)                             context)))
+          (= :style-rule node-type) (recur (into next-nodes (:declarations node)) context)
+          (= :media-rule node-type) (recur (into next-nodes (:rules        node)) context)
+          :else                     (recur next-nodes                             context)))
 
       context)))
 
@@ -139,11 +135,14 @@
   (let [unsuded? (complement contains?)]
     (remove
      (fn [declaration]
-       (or (and (string/starts-with? (:property declaration) "--")
+
+       (or (and (= :variable (-> declaration :meta :type))
                 (unsuded? (:used-variables context) (:property declaration)))
-           (and (string/includes? (:expression declaration) "var(")
+
+           (and (-> declaration :meta :variables)
                 (some (partial unsuded? (:variables context))
-                      (re-seq #"(?<=var\()(?:.*?)(?=\))" (:expression declaration))))))
+                      (-> declaration :meta :variables)))))
+
      declarations)))
 
 
@@ -155,43 +154,44 @@
       (assoc accumulator (:property declaration) declaration))
     {} declarations)))
 
-
+;;
 (defn remove-by-context
   [context stylesheets]
-  (loop [processing stylesheets
-         schema     {}
-         processed  []]
-    (if processing
-      (let [stylesheet      (first processing)
-            type-stylesheet (:type stylesheet)]
+  (loop [nodes        (seq stylesheets)
+         schema       {}
+         accumulator  []]
+    (if nodes
+      (let [node       (first nodes)
+            next-nodes (next nodes)
+            node-type  (:type node)]
         (cond
 
-          (= :style-rule type-stylesheet)
-          (let [new-declarations (clear-declarations context (:declarations stylesheet))]
+          (= :style-rule node-type)
+          (let [new-declarations (clear-declarations context (:declarations node))]
             (if (seq new-declarations)
-              (let [new-stylesheet (assoc stylesheet :declarations new-declarations)
-                    members        (-> stylesheet :selectors hash)
-                    new-schema     (if (contains? schema members)
-                                     (update-in schema [members :declarations] into new-declarations)
-                                     (assoc  schema members new-stylesheet))]
-                (recur (next processing) new-schema []))
-              (recur (next processing) schema [])))
+              (let [new-node   (assoc node :declarations new-declarations)
+                    identifier (hash (:selectors node))
+                    new-schema (if (contains? schema identifier)
+                                 (update-in schema [identifier :declarations] into new-declarations)
+                                 (assoc schema identifier new-node))]
+                (recur next-nodes new-schema []))
+              (recur next-nodes schema [])))
 
-          (= :media-rule type-stylesheet)
-          (let [media-stylesheets (remove-by-context context (:rules stylesheet))]
-            (if (seq media-stylesheets)
-              (recur (next processing) schema (conj processed (assoc stylesheet :rules media-stylesheets)))
-              (recur (next processing) schema processed)))
+          (= :media-rule node-type)
+          (let [media-nodes (remove-by-context context (:rules node))]
+            (if (seq media-nodes)
+              (recur next-nodes schema (conj accumulator (assoc node :rules media-nodes)))
+              (recur next-nodes schema accumulator)))
 
-          (= :keyframes-rule type-stylesheet)
-          (if (contains? (:animations context) (:name stylesheet))
-            (recur (next processing) schema (conj processed stylesheet))
-            (recur (next processing) schema processed))
+          (= :keyframes-rule node-type)
+          (if (contains? (:animations context) (:name node))
+            (recur next-nodes schema (conj accumulator node))
+            (recur next-nodes schema accumulator))
 
           :else
-          (recur (next processing) schema (conj processed stylesheet))))
+          (recur next-nodes schema (conj accumulator node))))
 
-      (into processed
+      (into accumulator
             (map (fn [[_ style-rule]]
                    (update style-rule :declarations remove-duplicate-declarations))
                  schema)))))
