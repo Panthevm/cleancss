@@ -209,4 +209,13 @@
        @media all{@media all{B{o:o}}}"
 
       "@media all{A{o:o}}"
-      "@media all{@media all{A{o:o}}}")))
+      "@media all{@media all{A{o:o}}}"))
+
+  (testing "duplicate selectors"
+    (defcase {:types #{"A"}}
+      "A{o:o}
+       @media all{A{o:o}}"
+
+      "@media all{A{o:o}}"
+      "A{o:o}")))
+

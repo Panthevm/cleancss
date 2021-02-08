@@ -5,44 +5,29 @@
 
 (defn used-attribute?
   [app member]
-  (let [operator (-> member :operator :name)]
-    (some (fn [[attribute-name attribute-value]]
-            (when (= attribute-name (:name member))
-              (let [attribute (:attribute member)]
-                (cond
-                  (= "=" operator)
-                  (= attribute-value attribute)
-
-                  (= "~=" operator)
-                  (let [values (string/split attribute-value #" ")]
-                    (some #(= attribute %) values))
-
-                  (= "|=" operator)
-                  (or (= attribute-value attribute)
-                      (string/starts-with? attribute-value (str attribute "-")))
-
-                  (= "^=" operator)
-                  (string/starts-with? attribute-value attribute)
-
-                  (= "$=" operator)
-                  (string/ends-with? attribute-value attribute)
-
-                  (= "*=" operator)
-                  (string/includes? attribute-value attribute)
-
-                  :else true))))
-          (:attributes app))))
+  (some (fn [[attribute-name attribute-value]]
+          (when (= attribute-name (:name member))
+            (condp = (-> member :operator :name)
+              "="  (= attribute-value (:attribute member))
+              "^=" (string/starts-with? attribute-value (:attribute member))
+              "$=" (string/ends-with?   attribute-value (:attribute member))
+              "*=" (string/includes?    attribute-value (:attribute member))
+              "~=" (some #(= (:attribute member) %)
+                         (string/split attribute-value #" "))
+              "|=" (or (= attribute-value (:attribute member))
+                       (string/starts-with? attribute-value (str (:attribute member) "-")))
+              true)))
+        (:attributes app)))
 
 
 (defn used-selector?
   [app member]
-  (let [member-group (:group member)]
-    (cond
-      (= :class      member-group) (contains? (:classes     app) (:name member))
-      (= :type       member-group) (contains? (:types       app) (:name member))
-      (= :pseudo     member-group) (contains? (:pseudos     app) (:name member))
-      (= :identifier member-group) (contains? (:identifiers app) (:name member))
-      :else true)))
+  (condp = (:group member)
+    :class      (contains? (:classes     app) (:name member))
+    :type       (contains? (:types       app) (:name member))
+    :pseudo     (contains? (:pseudos     app) (:name member))
+    :identifier (contains? (:identifiers app) (:name member))
+    true))
 
 
 (declare remove-unused-selectors)
@@ -50,13 +35,12 @@
 
 (defn used-member?
   [app member]
-  (let [member-type (:type member)]
-    (cond
-      (= :selector-simple-member   member-type) (used-selector?  app member)
-      (= :selector-attribute       member-type) (used-attribute? app member)
-      (= :selector-member-function member-type) (contains? (:functions app) (:function member))
-      (= :selector-member-not      member-type) (seq (remove-unused-selectors app (:selectors member)))
-      :else true)))
+  (condp = (:type member)
+    :selector-simple-member   (used-selector?  app member)
+    :selector-attribute       (used-attribute? app member)
+    :selector-member-not      (seq (remove-unused-selectors app (:selectors member)))
+    :selector-member-function (contains? (:functions app) (:function member))
+    true))
 
 
 (defn remove-unused-selectors
