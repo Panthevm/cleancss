@@ -1,33 +1,8 @@
 (ns cleancss.filter
   (:require
+   [cleancss.find        :as find]
+   [cleancss.compression :as compress]
    [clojure.string :as string]))
-
-
-(defn used-attribute?
-  [app member]
-  (some (fn [[attribute-name attribute-value]]
-          (when (= attribute-name (:name member))
-            (condp = (-> member :operator :name)
-              "="  (= attribute-value (:attribute member))
-              "^=" (string/starts-with? attribute-value (:attribute member))
-              "$=" (string/ends-with?   attribute-value (:attribute member))
-              "*=" (string/includes?    attribute-value (:attribute member))
-              "~=" (some #(= (:attribute member) %)
-                         (string/split attribute-value #" "))
-              "|=" (or (= attribute-value (:attribute member))
-                       (string/starts-with? attribute-value (str (:attribute member) "-")))
-              true)))
-        (:attributes app)))
-
-
-(defn used-selector?
-  [app member]
-  (condp = (:group member)
-    :class      (contains? (:classes     app) (:name member))
-    :type       (contains? (:types       app) (:name member))
-    :pseudo     (contains? (:pseudos     app) (:name member))
-    :identifier (contains? (:identifiers app) (:name member))
-    true))
 
 
 (declare remove-unused-selectors)
@@ -36,20 +11,37 @@
 (defn used-member?
   [app member]
   (condp = (:type member)
-    :selector-simple-member   (used-selector?  app member)
-    :selector-attribute       (used-attribute? app member)
+    :selector-simple-member
+    (condp = (:group member)
+      :class      (find/class?      app member)
+      :type       (find/type?       app member)
+      :pseudo     (find/pseudo?     app member)
+      :identifier (find/identifier? app member)
+      true)
+    :selector-attribute       (find/attribute? app member)
+    :selector-member-function (find/function? app member)
     :selector-member-not      (seq (remove-unused-selectors app (:selectors member)))
-    :selector-member-function (contains? (:functions app) (:function member))
     true))
+
+
+(defn update-used-members
+  [app members]
+  (map (fn [member]
+         (when (used-member? app member)
+           (if (= :class (:group member))
+             (assoc member :value
+                    (str "." (get-in app [:classes (:name member)])))
+             member)))
+       members))
 
 
 (defn remove-unused-selectors
   [app selectors]
-  (filter (fn [selector]
-            (every? (fn [member]
-                      (used-member? app member))
-                    (:members selector)))
-          selectors))
+  (keep (fn [selector]
+          (let [new-members (update-used-members app (:members selector))]
+            (when (every? identity new-members)
+              (assoc selector :members new-members))))
+        selectors))
 
 
 (defn remove-unused-stylesheets
@@ -84,7 +76,7 @@
   [stylesheets]
   (loop [nodes   stylesheets
          context {:animations     #{}
-                  :variables      #{}
+                  :variables      {}
                   :used-variables #{}}]
     (if nodes
       (let [node       (first nodes)
@@ -100,10 +92,16 @@
               (recur next-nodes (update context :animations conj (-> node :meta :animation)))
 
               (= :variable meta-type)
-              (recur next-nodes (update context :variables conj (:property node)))
+              (recur next-nodes (update context :variables
+                                        (fn [variables]
+                                          (assoc variables (:property node)
+                                                 (str "--" (compress/short-name (count variables)))))))
 
               (-> node :meta :variables)
-              (recur next-nodes (update context :used-variables into (-> node :meta :variables)))
+              (recur next-nodes (update context :used-variables
+                                        into (->> node :meta :variables
+                                                  (map (fn [variable]
+                                                         (first (string/split variable #",")))))))
 
               :else (recur next-nodes context)))
 
@@ -114,20 +112,39 @@
       context)))
 
 
+(defn expression-variables-resolve
+  [context declaration]
+  (reduce
+   (fn [expression variable]
+     (when expression
+       (let [[value default] (string/split variable #",")]
+         (cond
+           (find/variable? context value)
+           (string/replace expression (re-pattern variable)
+                           (get-in context [:variables value]))
+
+           default
+           (string/replace expression (re-pattern (str "var\\(" variable "\\)")) default)))))
+   (-> declaration :expression)
+   (-> declaration :meta :variables)))
+
+
 (defn clear-declarations
   [context declarations]
-  (let [unsuded? (complement contains?)]
-    (remove
-     (fn [declaration]
+  (keep (fn [declaration]
+          (let [declaration-meta (:meta declaration)]
+            (cond
+              (= :variable (:type declaration-meta))
+              (when (find/used-variable? context declaration)
+                (assoc declaration :property (get-in context [:variables (:property declaration)])))
 
-       (or (and (= :variable (-> declaration :meta :type))
-                (unsuded? (:used-variables context) (:property declaration)))
+              (:variables declaration-meta)
+              (let [new-expression (expression-variables-resolve context declaration)]
+                (when new-expression
+                  (assoc declaration :expression new-expression)))
 
-           (and (-> declaration :meta :variables)
-                (some (partial unsuded? (:variables context))
-                      (-> declaration :meta :variables)))))
-
-     declarations)))
+              :else declaration)))
+        declarations))
 
 
 (defn remove-duplicate-declarations
@@ -138,7 +155,7 @@
       (assoc accumulator (:property declaration) declaration))
     {} declarations)))
 
-;;
+
 (defn remove-by-context
   [context stylesheets]
   (loop [nodes        (seq stylesheets)

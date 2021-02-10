@@ -1,6 +1,10 @@
 (ns cleancss.utils
-  #?(:clj  (:require [clojure.string :as string]))
+  #?(:clj
+     (:require
+      [clojure.string       :as string]
+      [cleancss.compression :as compress]))
   #?(:cljs (:require-macros [cleancss.utils])))
+
 
 #?(:clj (defonce classes     (atom {})))
 #?(:clj (defonce identifiers (atom {})))
@@ -14,10 +18,23 @@
 
 #?(:clj
    (defn add-class
-     [ns value]
-     (if (sequential? value)
-       (swap! classes update ns (fnil into #{}) (mapv escape value))
-       (swap! classes update ns (fnil conj #{}) (escape value)))))
+     [state name-space class-names]
+     (update state name-space
+             (fn [ns-state]
+               (loop [items  class-names
+                      acc    (or ns-state {})]
+                 (if (seq items)
+                   (let [item (first items)]
+                     (if (contains? (apply merge (map second state)) item)
+                       (recur (next items) acc)
+                       (recur (next items)
+                              (assoc acc (first items)
+                                     (compress/short-name
+                                      (+ (count (mapcat (comp keys second)
+                                                        @classes))
+                                         (count acc)))))))
+                   acc))))))
+
 
 
 #?(:clj
@@ -38,8 +55,8 @@
 #?(:clj
    (defmacro c [& value]
      (let [ns (-> &env :ns :name)]
-       (add-class ns value)
-       (vec value))))
+       (swap! classes (fn [state] (add-class state ns value)))
+       (vec (vals (select-keys (apply merge (map second @classes)) value))))))
 
 
 #?(:clj

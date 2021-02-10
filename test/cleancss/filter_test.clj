@@ -27,11 +27,11 @@
 
 
   (testing "unused classes"
-    (defcase {:classes #{"A"}}
-      ".A{o:o}
+    (defcase {:classes {"wery-long-name" "a"}}
+      ".wery-long-name{o:o}
        .B{o:o}"
 
-      ".A{o:o}"))
+      ".a{o:o}"))
 
 
   (testing "unused identifiers"
@@ -157,7 +157,40 @@
     (defcase {:types #{"A"}}
       "A{}"
 
-      ""))
+      "")))
+
+
+(deftest media-rule
+
+  (testing "empty rules"
+
+    (defcase {:types #{"A"}}
+      "@media all{A{o:o}}
+       @media all{B{o:o}}
+       @media all{}
+       @media all{@media all{A{o:o}}}
+       @media all{@media all{B{o:o}}}"
+
+      "@media all{A{o:o}}"
+      "@media all{@media all{A{o:o}}}")))
+
+
+(deftest remove-by-context
+
+
+  (testing "duplicate selector"
+    (defcase {:types #{"A"}}
+      "A{a:a}
+       A{b:b}"
+
+      "A{b:b;a:a}")
+
+    (defcase {:types #{"A"}}
+      "A{o:o}
+       @media all{A{o:o}}"
+
+      "@media all{A{o:o}}"
+      "A{o:o}"))
 
 
   (testing "duplicate declaration"
@@ -167,12 +200,23 @@
       "A{a:2;b:3}"))
 
 
-  (testing "duplicate selector"
+  (testing "unused keyframes"
     (defcase {:types #{"A"}}
-      "A{a:a}
-       A{b:b}"
+      "A{animation: B}
+       @keyframes B{}
+       @keyframes C{}"
 
-      "A{b:b;a:a}"))
+      "@keyframes B{}"
+      "A{animation:B}"))
+
+
+  (testing "variables short alias"
+    (defcase {:types #{"A" "B"}}
+      "A{--first-name:1; --second-name:1}
+       B{b:calc(var(--first-name) - var(--second-name))}"
+
+      "A{--b:1;--a:1}"
+      "B{b:calc(var(--b) - var(--a))}"))
 
 
   (testing "unused variables"
@@ -183,39 +227,15 @@
          d:var(--d)}"
 
       "A{--a:1}"
-      "C{c:var(--a)}")))
+      "C{c:var(--a)}"))
 
 
+  (testing "variables defaults resolve"
+    (defcase {:types #{"A" "B" "C"}}
+      "A{--a:1}
+       B{b:calc(1 - var(--a, 0))}
+       C{c:calc(1 - var(--c, 0))}"
 
-(deftest keyframe-rule
-  (testing "unused keyframes"
-    (defcase {:types #{"A"}}
-      "A{animation: B}
-       @keyframes B{}
-       @keyframes C{}"
-
-      "@keyframes B{}"
-      "A{animation:B}")))
-
-
-
-(deftest media-rule
-  (testing "empty rules"
-    (defcase {:types #{"A"}}
-      "@media all{A{o:o}}
-       @media all{B{o:o}}
-       @media all{}
-       @media all{@media all{A{o:o}}}
-       @media all{@media all{B{o:o}}}"
-
-      "@media all{A{o:o}}"
-      "@media all{@media all{A{o:o}}}"))
-
-  (testing "duplicate selectors"
-    (defcase {:types #{"A"}}
-      "A{o:o}
-       @media all{A{o:o}}"
-
-      "@media all{A{o:o}}"
-      "A{o:o}")))
-
+      "A{--a:1}"
+      "B{b:calc(1 - var(--a))}"
+      "C{c:calc(1 - 0)}")))

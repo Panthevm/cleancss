@@ -37,7 +37,7 @@
   (-> application
       (update :identifiers #(if (empty? %) (concat-map-values @utils/identifiers) %))
       (update :attributes  #(if (empty? %) (concat-map-values @utils/attributes)  %))
-      (update :classes     #(if (empty? %) (concat-map-values @utils/classes)     %))
+      (update :classes     #(if (empty? %) (apply merge (map second @utils/classes)) %))
       (update :types       #(if (= :all %) defaults/types      %))
       (update :pseudos     #(if (= :all %) defaults/pseudos    %))
       (update :functions   #(if (= :all %) defaults/functions  %))))
@@ -45,6 +45,7 @@
 
 (defn build
   [_]
+  (prn (-> configuration :application application-update))
   (->> stylesheets
        (core/clean          (-> configuration :application application-update))
        (core/export-to-file (-> configuration :build :export))))
