@@ -59,7 +59,7 @@ cleancss/cleancss {:mvn/version "RELEASE"}
 ```clojure
 (ns app.core
   (:require
-   [cleancss.utils :refer [c i a]))
+   [cleancss.state :refer [c i a]))
 
 (defn component
   []
