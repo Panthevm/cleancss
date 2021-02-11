@@ -1,7 +1,7 @@
 (ns cleancss.hooks
   (:require
    [cleancss.core     :as core]
-   [cleancss.utils    :as utils]
+   [cleancss.state    :as state]
    [cleancss.defaults :as defaults]
 
    [clojure.java.io :as io]
@@ -17,27 +17,21 @@
 
 
 (def configuration
-  (-> (io/file "cleancss.edn") io/reader PushbackReader. edn/read))
+  (let [cfg (io/file "cleancss.edn")]
+    (when (.exists cfg)
+      (-> cfg io/reader PushbackReader. edn/read))))
 
 
 (def stylesheets
   (-> configuration :build :import core/import-from-file))
 
 
-(defn concat-map-values
-  [data]
-  (reduce-kv
-   (fn [acc k v]
-     (into acc v))
-   #{} data))
-
-
 (defn application-update
   [application]
   (-> application
-      (update :identifiers #(if (empty? %) (concat-map-values @utils/identifiers) %))
-      (update :attributes  #(if (empty? %) (concat-map-values @utils/attributes)  %))
-      (update :classes     #(if (empty? %) (apply merge (map second @utils/classes)) %))
+      (update :identifiers #(if % % (state/get-identifiers @state/state)))
+      (update :attributes  #(if % % (state/get-attributes  @state/state)))
+      (update :classes     #(if % % (state/get-classes     @state/state)))
       (update :types       #(if (= :all %) defaults/types      %))
       (update :pseudos     #(if (= :all %) defaults/pseudos    %))
       (update :functions   #(if (= :all %) defaults/functions  %))))
@@ -45,17 +39,9 @@
 
 (defn build
   [_]
-  (prn (-> configuration :application application-update))
   (->> stylesheets
        (core/clean          (-> configuration :application application-update))
        (core/export-to-file (-> configuration :build :export))))
-
-
-(defn update-state
-  [updated-namespace exists-namespaces state]
-  (-> state
-      (dissoc updated-namespace)
-      (select-keys exists-namespaces)))
 
 
 (defn reset
@@ -75,6 +61,8 @@
              (apply max-key :modified)
              :ns)]
 
-    (swap! utils/identifiers (partial update-state updated-namespace exists-namespaces))
-    (swap! utils/attributes  (partial update-state updated-namespace exists-namespaces))
-    (swap! utils/classes     (partial update-state updated-namespace exists-namespaces))))
+    (swap! state/state
+           (fn [state]
+             (-> state
+                 (dissoc state updated-namespace)
+                 (select-keys exists-namespaces))))))

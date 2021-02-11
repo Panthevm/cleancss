@@ -1,6 +1,6 @@
 (ns app.page
   (:require
-   [cleancss.utils :refer [c]]))
+   [cleancss.state :refer [c]]))
 
 (defn view
   []

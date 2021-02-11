@@ -1,6 +1,7 @@
 {:paths ["src"]
- :deps  {org.clojure/clojure {:mvn/version "RELEASE"}
-         com.helger/ph-css   {:mvn/version "RELEASE"}}
+ :deps  {org.clojure/clojure       {:mvn/version "RELEASE"}
+         org.clojure/clojurescript {:mvn/version "RELEASE"}
+         com.helger/ph-css         {:mvn/version "RELEASE"}}
 
  :aliases
  {:test
