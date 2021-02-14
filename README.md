@@ -50,6 +50,7 @@ cleancss/cleancss {:mvn/version "0.5.1"}
 
 ```edn
   :clean-outputs    true
+  :css-dirs         ["resources/public/css"]
   :pre-build-hooks  [cleancss.hooks/reset]
   :post-build-hooks [cleancss.hooks/build]
 ```
