@@ -183,5 +183,7 @@
                            #_(.setContentCharset "UTF-8"))]
     (doseq [style (remove nil? stylesheets)]
       (.addRule cascading-object (datafy style)))
-    (with-open [writer (io/writer (-> configuration :output-file))]
-      (.write writer (.getCSSAsString writer-object cascading-object)))))
+    (-> configuration :output-file io/file io/make-parents)
+    (.writeCSS writer-object
+               cascading-object
+               (io/writer (:output-file configuration)))))
