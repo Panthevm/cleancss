@@ -180,7 +180,7 @@
         settings-object  (CSSWriterSettings. ECSSVersion/CSS30 true)
         writer-object    (doto (CSSWriter. settings-object)
                            (.setWriteHeaderText false)
-                           (.setContentCharset "UTF-8"))]
+                           #_(.setContentCharset "UTF-8"))]
     (doseq [style (remove nil? stylesheets)]
       (.addRule cascading-object (datafy style)))
     (with-open [writer (io/writer (-> configuration :output-file))]

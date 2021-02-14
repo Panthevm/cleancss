@@ -22,13 +22,13 @@ cleancss/cleancss {:mvn/version "RELEASE"}
  :watch-dirs ["src"]
  
  :application
- {;; :all - Includes all functions `cleancss.defaults/functions`. Or a custom set #{":lang" ...}
+ {;; :all - Includes all functions `cleancss.state/functions`. Or a custom set #{":lang" ...}
   :functions :all
 
-  ;; :all - Includes all pseudos `cleancss.defaults/pseudos`. Or a custom set #{":hover" ...}
+  ;; :all - Includes all pseudos `cleancss.state/pseudos`. Or a custom set #{":hover" ...}
   :pseudos :all
 
-  ;; :all - Includes all types `cleancss.defaults/types`. Or a custom set #{"*", "div" ...}
+  ;; :all - Includes all types `cleancss.state/types`. Or a custom set #{"*", "div" ...}
   :types :all
 
   ;; If you do not specify a value, the data will be taken from the application

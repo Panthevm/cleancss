@@ -38,6 +38,11 @@
   (contains? (:variables context) variable))
 
 
+(defn keyframes?
+  [context keyframes]
+  (contains? (:animations context) (:name keyframes)))
+
+
 (defn attribute?
   [application member]
   (some (fn [[attribute-name attribute-value]]

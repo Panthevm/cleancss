@@ -41,8 +41,11 @@
     (let [property   (-> object .getProperty)
           expression (-> object .getExpressionAsCSSString)
           meta-type  (cond
-                       (= property "animation")            :animation
-                       (string/starts-with? property "--") :variable)]
+                       (contains? #{"animation" "animation-name"} property)
+                       :animation
+
+                       (string/starts-with? property "--")
+                       :variable)]
       {:type       :declaration
        :property   property
        :expression expression
@@ -51,7 +54,7 @@
                     :variables (when (string/includes? expression "var(")
                                  (re-seq #"(?<=var\()(?:.*?)(?=\))" expression))
                     :animation (when (= :animation meta-type)
-                                 (re-find #"\w+" expression))}})))
+                                 (re-find #"\S+" expression))}})))
 
 
 (extend-type CSSSelectorSimpleMember

@@ -1,8 +1,7 @@
 (ns cleancss.hooks
   (:require
-   [cleancss.core     :as core]
-   [cleancss.state    :as state]
-   [cleancss.defaults :as defaults]
+   [cleancss.core  :as core]
+   [cleancss.state :as state]
 
    [clojure.java.io :as io]
    [clojure.edn     :as edn]
@@ -32,9 +31,9 @@
       (update :identifiers #(if % % (state/get-identifiers @state/state)))
       (update :attributes  #(if % % (state/get-attributes  @state/state)))
       (update :classes     #(if % % (state/get-classes     @state/state)))
-      (update :types       #(if (= :all %) defaults/types      %))
-      (update :pseudos     #(if (= :all %) defaults/pseudos    %))
-      (update :functions   #(if (= :all %) defaults/functions  %))))
+      (update :types       #(if (= :all %) state/types      %))
+      (update :pseudos     #(if (= :all %) state/pseudos    %))
+      (update :functions   #(if (= :all %) state/functions  %))))
 
 
 (defn build
