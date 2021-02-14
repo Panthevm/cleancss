@@ -12,7 +12,7 @@ CleanCSS - is a tool that removes unused CSS stylesheets
 
 
 ```edn
-cleancss/cleancss {:mvn/version "RELEASE"}
+cleancss/cleancss {:mvn/version "0.5.1"}
 ```
 
 2) Create the `cleancss.edn` configuration file in the root directory of the project:
