@@ -1,14 +1,22 @@
 (ns ^:figwheel-hooks app.core
   (:require
    [reagent.dom    :as dom]
-   [app.page       :as page]
-   [cleancss.state :refer [c]]))
+   [cleancss.cljs.state :refer [c]]
+   [app.components.sidebar.view :as sidebar]
+
+   [app.pages.intro.view :as intro]))
 
 (defn view
   []
-  [:<>
-   [page/view]
-   [:section {:class (c "min-h-screen" "bg-red-500")}]])
+  [:div {:class (c "min-h-screen"
+                   "flex"
+                   "bg-gray-100")}
+   [sidebar/component]
+   [:div {:class (c "mx-24"
+                    "w-full"
+                    "my-12")}
+    [intro/page]]])
+
 
 (defn ^:after-load mount
   []

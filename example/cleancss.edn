@@ -1,10 +1,15 @@
 {:watch-dirs ["src"]
- :application
- {:functions #{}
-  :pseudos   #{}
-  :types     #{"*" "html" "body" "section"}}
 
+ :state
+ {:types #{"*"
+           "a"
+           "ul"
+           "li"
+           "div"
+           "html"
+           "body"
+           "span"}}
+ 
  :build
  {:import {:input-files ["resources/public/css/tailwind.min.css"]}
-
   :export {:output-file "resources/public/css/cleancss.css"}}}
