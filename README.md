@@ -28,7 +28,7 @@ cleancss/cleancss {:mvn/version "0.6.0"}
   ;; If not specified, the value will be `cleancss.cljs.env/pseudos`
   ;; :pseudos #{":hover" ...}
 
-  ;; If not specified, the value will be `cleancss.cljs.env/pseudos`
+  ;; If not specified, the value will be `cleancss.cljs.env/types`
   ;; :types #{"*", "div" ...}
 
   ;; If you do not specify a value, the data will be taken from the application
