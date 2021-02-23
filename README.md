@@ -12,7 +12,7 @@ CleanCSS - is a tool that removes unused CSS stylesheets
 
 
 ```edn
-cleancss/cleancss {:mvn/version "0.5.1"}
+cleancss/cleancss {:mvn/version "0.6.0"}
 ```
 
 2) Create the `cleancss.edn` configuration file in the root directory of the project:
@@ -21,15 +21,15 @@ cleancss/cleancss {:mvn/version "0.5.1"}
 {;; project sources
  :watch-dirs ["src"]
  
- :application
- {;; :all - Includes all functions `cleancss.state/functions`. Or a custom set #{":lang" ...}
-  :functions :all
+ :state
+ {;; If not specified, the value will be `cleancss.cljs.env/functions`
+  ;; :functions #{":lang" ...}
 
-  ;; :all - Includes all pseudos `cleancss.state/pseudos`. Or a custom set #{":hover" ...}
-  :pseudos :all
+  ;; If not specified, the value will be `cleancss.cljs.env/pseudos`
+  ;; :pseudos #{":hover" ...}
 
-  ;; :all - Includes all types `cleancss.state/types`. Or a custom set #{"*", "div" ...}
-  :types :all
+  ;; If not specified, the value will be `cleancss.cljs.env/pseudos`
+  ;; :types #{"*", "div" ...}
 
   ;; If you do not specify a value, the data will be taken from the application
   ;; :identifiers #{"id"}
@@ -46,13 +46,12 @@ cleancss/cleancss {:mvn/version "0.5.1"}
 
 ```
 
-3) Add a call to `cleancss.hooks/reset` before building the project and `cleancss.hooks/build` after building.For example, in [figwheel-main](https://github.com/bhauman/figwheel-main), this is configured as follows:
+3) Add a call to `cleancss.cljs.hooks/reset` before building the project and `cleancss.cljs.hooks/build` after building.For example, in [figwheel-main](https://github.com/bhauman/figwheel-main), this is configured as follows:
 
 ```edn
-  :clean-outputs    true
   :css-dirs         ["resources/public/css"]
-  :pre-build-hooks  [cleancss.hooks/reset]
-  :post-build-hooks [cleancss.hooks/build]
+  :pre-build-hooks  [cleancss.cljs.hooks/reset]
+  :post-build-hooks [cleancss.cljs.hooks/build]
 ```
 
 4) Wrap all the styles you use in a macro
@@ -60,7 +59,7 @@ cleancss/cleancss {:mvn/version "0.5.1"}
 ```clojure
 (ns app.core
   (:require
-   [cleancss.state :refer [c i a]))
+   [cleancss.cljs.state :refer [c i a]))
 
 (defn component
   []
