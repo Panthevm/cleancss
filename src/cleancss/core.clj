@@ -34,7 +34,7 @@
         context           (context/get-context state-stylesheets)]
     (->> state-stylesheets
          (filter/clean-by-context context)
-         (compress/make state context))))
+         (compress/make))))
 
 
 (defn -main [& args])

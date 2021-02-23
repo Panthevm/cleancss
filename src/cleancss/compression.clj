@@ -1,70 +1,15 @@
-(ns cleancss.compression
-  (:require
-   [cleancss.find    :as find]
-   [clojure.string   :as string]))
-
-(def symbols        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-(def symbols-length (count symbols))
-
-(defn short-name
-  [number]
-  (loop [iterator number
-         result   nil]
-    (let [remainder (mod iterator symbols-length)]
-      (cond
-        (and (zero? iterator) (not result))
-        (str (nth symbols remainder))
-
-        (zero? iterator)
-        result
-
-        :else
-        (recur (/ (- iterator remainder) symbols-length)
-               (str result (nth symbols remainder)))))))
-
-
-(defn variables-resolve
-  [context declaration]
-  (reduce
-   (fn [expression variable]
-     (let [[value default] (string/split variable #",")]
-       (if (find/variable? context value)
-         (string/replace expression (re-pattern variable) (get-in context [:variables value]))
-         (string/replace expression (re-pattern (str "var\\(" variable "\\)")) default))))
-   (-> declaration :expression)
-   (-> declaration :meta :variables)))
-
-
-(defn declaration
-  [context node]
-  (cond
-    (= :variable (-> node :meta :type))
-    (assoc node :property (get-in context [:variables (:property node)]))
-
-    (-> node :meta :variables)
-    (assoc node :expression (variables-resolve context node))
-    
-    :else node))
-
-
-(defn selector
-  [state node]
-  (update node :members
-          (partial map
-                   (fn [member]
-                     (if (= :class (:group member))
-                       (assoc member :value (str "." (get-in state [:classes (:name member)])))
-                       member)))))
+(ns cleancss.compression)
 
 
 (defn make
-  [state context stylesheets]
+  [stylesheets]
   (letfn [(add-unique [uniques identifier path node]
             (update uniques identifier
                     (fn [unique]
                       (if unique
-                        (update unique path #(make state context (into (get node path) %)))
-                        (update node   path (partial make state context))))))]
+                        (update unique path
+                                #(make (into (get node path) %)))
+                        (update node path make)))))]
 
     (loop [nodes   (seq stylesheets)
            uniques {}]
@@ -74,33 +19,36 @@
           (cond
 
             (= :declaration node-type)
-            (let [identifier (:property node)]
-              (recur (next nodes) (assoc uniques identifier (declaration context node))))
+            (recur (next nodes)
+                   (assoc uniques (:property node) node))
 
             (= :selector node-type)
-            (let [identifier (hash (:members node))]
-              (recur (next nodes) (assoc uniques identifier (selector state node))))
+            (recur (next nodes)
+                   (assoc uniques (hash (:members node)) node))
 
             (= :style-rule node-type)
-            (let [new-node   (update node :selectors (partial make state context))
-                  identifier (hash (:selectors new-node))]
-              (recur (next nodes) (add-unique uniques identifier :declarations new-node)))
+            (let [new-node (update node :selectors make)]
+              (recur (next nodes)
+                     (add-unique uniques (hash (:selectors new-node))
+                                 :declarations new-node)))
 
             (= :media-rule node-type)
-            (let [identifier (hash (:queries node))]
-              (recur (next nodes) (add-unique uniques identifier :rules node)))
+            (recur (next nodes)
+                   (add-unique uniques (hash (:queries node))
+                               :rules node))
 
             (= :keyframes-block node-type)
-            (let [identifier (hash (:selectors node))]
-              (recur (next nodes) (add-unique uniques identifier :declarations node)))
+            (recur (next nodes)
+                   (add-unique uniques (hash (:selectors node))
+                               :declarations node))
 
             (= :keyframes-rule node-type)
-            (let [identifier (hash (:name node))]
-              (recur (next nodes) (add-unique uniques identifier :blocks node)))
-            
-
+            (recur (next nodes)
+                   (add-unique uniques (hash (:name node))
+                               :blocks node))
 
             :else 
-            (recur (next nodes) (assoc uniques (hash node) node))))
+            (recur (next nodes)
+                   (assoc uniques (hash node) node))))
 
         (vals uniques)))))

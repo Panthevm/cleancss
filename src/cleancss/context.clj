@@ -1,6 +1,4 @@
-(ns cleancss.context
-  (:require
-   [cleancss.compression :as compress]))
+(ns cleancss.context)
 
 
 (defn add-animation
@@ -12,9 +10,7 @@
 (defn add-variable
   [context declaration]
   (update context :variables
-          (fn [variables]
-            (assoc variables (:property declaration)
-                   (str "--" (compress/short-name (count variables)))))))
+          conj (:property declaration)))
 
 
 (defn add-used-variables
@@ -30,7 +26,7 @@
   (loop [nodes   (seq stylesheets)
          context {:used-variables #{}
                   :animations     #{}
-                  :variables       {}}]
+                  :variables      #{}}]
     (if nodes
       (let [node      (first nodes)
             node-type (:type node)]
