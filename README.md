@@ -4,7 +4,7 @@
 
 [![Clojars Project](https://img.shields.io/clojars/v/cleancss.svg)](https://clojars.org/cleancss)
 
-CleanCSS - is a tool that removes unused CSS stylesheets
+CleanCSS - ClojureScript tool that removes unused CSS
 
 ## Usage
 
