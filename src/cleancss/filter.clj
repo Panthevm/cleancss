@@ -3,14 +3,14 @@
    [cleancss.find :as find]))
 
 
-(declare clean-by-state)
+(declare by-state)
 
 
 (defn used-member?
   [state member]
-  (condp = (:type member)
+  (case (:type member)
     :selector-simple-member
-    (condp = (:group member)
+    (case (:group member)
       :class      (find/class?      state member)
       :type       (find/type?       state member)
       :pseudo     (find/pseudo?     state member)
@@ -18,41 +18,32 @@
       true)
     :selector-attribute       (find/attribute? state member)
     :selector-member-function (find/function?  state member)
-    :selector-member-not      (seq (clean-by-state state (:selectors member)))
+    :selector-member-not (seq (by-state state (:selectors member)))
     true))
 
 
-(defn clean-by-state
-  [state stylesheets]
-  (loop [nodes       (seq stylesheets)
-         accumulator (transient [])]
-    (if nodes
-      (let [node       (first nodes)
-            next-nodes (next  nodes)
-            node-type  (:type node)]
-        (cond
+(defn by-state
+  [state nodes]
+  (keep
+   (fn [node]
+     (case (:type node)
 
-          (= :selector node-type)
-          (if (every? #(used-member? state %) (:members node))
-            (recur next-nodes (conj! accumulator node))
-            (recur next-nodes accumulator))
+       :selector
+       (when (every? #(used-member? state %) (:members node))
+         node)
 
-          (= :style-rule node-type)
-          (let [selectors (clean-by-state state (:selectors node))]
-            (if (seq selectors)
-              (recur next-nodes (conj! accumulator (assoc node :selectors selectors)))
-              (recur next-nodes accumulator)))
+       :style-rule
+       (let [selectors (by-state state (:selectors node))]
+         (when (seq selectors)
+           (assoc node :selectors selectors)))
 
-          (= :media-rule node-type)
-          (let [rules (clean-by-state state (:rules node))]
-            (if (seq rules)
-              (recur next-nodes (conj! accumulator (assoc node :rules rules)))
-              (recur next-nodes accumulator)))
+       :media-rule
+       (let [rules (by-state state (:rules node))]
+         (when (seq rules)
+           (assoc node :rules rules)))
 
-          :else
-          (recur next-nodes (conj! accumulator node))))
-
-      (persistent! accumulator))))
+       node))
+   nodes))
 
 
 (defn used-declaration?
@@ -71,39 +62,29 @@
       :else true)))
 
 
-(defn clean-by-context
-  [context stylesheets]
-  (loop [nodes       (seq stylesheets)
-         accumulator (transient [])]
-    (if nodes
-      (let [node       (first nodes)
-            next-nodes (next  nodes)
-            node-type  (:type node)]
-        (cond
+(defn by-context
+  [context nodes]
+  (keep
+   (fn [node]
+     (case (:type node)
 
-          (= :declaration node-type)
-          (if (used-declaration? context node)
-            (recur next-nodes (conj! accumulator node))
-            (recur next-nodes accumulator))
+       :declaration
+       (when (used-declaration? context node)
+         node)
 
-          (= :style-rule node-type)
-          (let [declarations (clean-by-context context (:declarations node))]
-            (if (seq declarations)
-              (recur next-nodes (conj! accumulator (assoc node :declarations declarations)))
-              (recur next-nodes accumulator)))
+       :style-rule
+       (let [declarations (by-context context (:declarations node))]
+         (when (seq declarations)
+           (assoc node :declarations declarations)))
 
-          (= :media-rule node-type)
-          (let [rules (clean-by-context context (:rules node))]
-            (if (seq rules)
-              (recur next-nodes (conj! accumulator (assoc node :rules rules)))
-              (recur next-nodes accumulator)))
+       :media-rule
+       (let [rules (by-context context (:rules node))]
+         (when (seq rules)
+           (assoc node :rules rules)))
 
-          (= :keyframes-rule node-type)
-          (if (find/keyframes? context node)
-            (recur next-nodes (conj! accumulator node))
-            (recur next-nodes accumulator))
+       :keyframes-rule
+       (when (find/keyframes? context node)
+         node)
 
-          :else 
-          (recur next-nodes (conj! accumulator node))))
-
-      (persistent! accumulator))))
+       node))
+   nodes))

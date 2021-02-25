@@ -30,10 +30,10 @@
 
 (defn clean
   [state stylesheets]
-  (let [state-stylesheets (filter/clean-by-state state stylesheets)
+  (let [state-stylesheets (filter/by-state state stylesheets)
         context           (context/get-context state-stylesheets)]
     (->> state-stylesheets
-         (filter/clean-by-context context)
+         (filter/by-context context)
          (compress/make))))
 
 

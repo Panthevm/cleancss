@@ -11,7 +11,7 @@
   [state before & after]
   `(match
     (->> (import/from-string ~before)
-         (sut/clean-by-state ~state)
+         (sut/by-state ~state)
          (export/to-string))
     (apply str ~@after)))
 
@@ -20,7 +20,7 @@
   [context before & after]
   `(match
     (->> (import/from-string ~before)
-         (sut/clean-by-context ~context)
+         (sut/by-context ~context)
          (export/to-string))
     (apply str ~@after)))
 
@@ -30,137 +30,137 @@
 
   (testing "unused types"
     (defstate {:types #{"A"}}
-      "A{o:o}
-       B{o:o}"
+      "A{}
+       B{}"
 
-      "A{o:o}"))
+      "A{}"))
 
 
   (testing "unused classes"
     (defstate {:classes #{"A"}}
-      ".A{o:o}
-       .B{o:o}"
+      ".A{}
+       .B{}"
 
-      ".A{o:o}"))
+      ".A{}"))
 
 
   (testing "unused identifiers"
     (defstate {:identifiers #{"A"}}
-      "#A{o:o}
-       #B{o:o}"
+      "#A{}
+       #B{}"
 
-      "#A{o:o}"))
+      "#A{}"))
 
 
   (testing "unused pseudos"
     (defstate {:pseudos #{":A"}}
-      ":A{o:o}
-       :B{o:o}"
+      ":A{}
+       :B{}"
 
-      ":A{o:o}"))
+      ":A{}"))
 
 
   (testing "unused nth-*"
     (defstate {:pseudos #{":nth-child"}}
-      ":nth-child(n){o:o}
-       :nth-of-type(n){o:o}"
+      ":nth-child(n){}
+       :nth-of-type(n){}"
 
-      ":nth-child(n){o:o}"))
+      ":nth-child(n){}"))
 
 
   (testing "unused functions"
     (defstate {:functions #{":A"}}
-      ":A(n){o:o}
-       :B(n){o:o}"
+      ":A(n){}
+       :B(n){}"
 
-      ":A(n){o:o}"))
+      ":A(n){}"))
 
 
   (testing "unused single attribute"
     (defstate {:attributes #{["A"]}}
-      "[A]{o:o}
-       [B]{o:o}"
+      "[A]{}
+       [B]{}"
 
-      "[A]{o:o}"))
+      "[A]{}"))
 
 
   (testing "unused = attribute"
     (defstate {:attributes #{["A" "W"]}}
-      "[A=W]{o:o}
-       [A=G]{o:o}
-       [B=W]{o:o}"
+      "[A=W]{}
+       [A=G]{}
+       [B=W]{}"
 
-      "[A=W]{o:o}"))
+      "[A=W]{}"))
 
 
   (testing "unused ~ attribute"
     (defstate {:attributes #{["A" "C W T"]}}
-      "[A~=W]{o:o}
-       [A~=G]{o:o}
-       [B~=W]{o:o}"
+      "[A~=W]{}
+       [A~=G]{}
+       [B~=W]{}"
 
-      "[A~=W]{o:o}"))
+      "[A~=W]{}"))
 
 
   (testing "unused ^ attribute"
     (defstate {:attributes #{["A" "WT"]}}
-      "[A^=W]{o:o}
-       [A^=T]{o:o}"
+      "[A^=W]{}
+       [A^=T]{}"
 
-      "[A^=W]{o:o}"))
+      "[A^=W]{}"))
 
 
   (testing "unused $ attribute"
     (defstate {:attributes #{["A" "WT"]}}
-      "[A$=T]{o:o}
-       [A$=W]{o:o}"
+      "[A$=T]{}
+       [A$=W]{}"
 
-      "[A$=T]{o:o}"))
+      "[A$=T]{}"))
 
 
   (testing "unused * attribute"
     (defstate {:attributes #{["A" "CWT"]}}
-      "[A*=W]{o:o}
-       [A*=G]{o:o}"
+      "[A*=W]{}
+       [A*=G]{}"
 
-      "[A*=W]{o:o}"))
+      "[A*=W]{}"))
 
 
   (testing "unused | attribute"
     (defstate {:attributes #{["A" "C-S"]
                              ["H" "C"]}}
-      "[A|=C]{o:o}
-       [H|=C]{o:o}
-       [A|=S]{o:o}
-       [H|=S]{o:o}"
+      "[A|=C]{}
+       [H|=C]{}
+       [A|=S]{}
+       [H|=S]{}"
 
-      "[A|=C]{o:o}"
-      "[H|=C]{o:o}"))
+      "[A|=C]{}"
+      "[H|=C]{}"))
 
 
   (testing "not"
     (defstate {:attributes #{["A"]}}
-      ":not([B]){o:o}
-       :not([A]){o:o}"
+      ":not([B]){}
+       :not([A]){}"
 
-      ":not([A]){o:o}"))
+      ":not([A]){}"))
 
 
   (testing "combinators"
     (defstate {:types #{"A" "B"}}
-      "A B{o:o}
-       A>B{o:o}
-       A+B{o:o}
-       A~B{o:o}
-       A C{o:o}
-       A>C{o:o}
-       A+C{o:o}
-       A~C{o:o}"
+      "A B{}
+       A>B{}
+       A+B{}
+       A~B{}
+       A C{}
+       A>C{}
+       A+C{}
+       A~C{}"
 
-      "A B{o:o}"
-      "A>B{o:o}"
-      "A+B{o:o}"
-      "A~B{o:o}")))
+      "A B{}"
+      "A>B{}"
+      "A+B{}"
+      "A~B{}")))
 
 
 (deftest clean-by-context
