@@ -4,38 +4,50 @@
    [clojure.string :as string]))
 
 
-(defn class?
-  [application member]
-  (contains? (:classes application) (:name member)))
+(defn attribute?
+  [state member]
+  (some
+   (fn [[name' value]]
+     (when (= name' (:name member))
+       (let [attribute (:attribute member)]
+         (case (-> member :operator :name)
+           "="  (= value (:attribute member))
+           "^=" (string/starts-with? value attribute)
+           "$=" (string/ends-with?   value attribute)
+           "*=" (string/includes?    value attribute)
+           "~=" (some #(= attribute %) (string/split value #" "))
+           "|=" (or (= value attribute)
+                    (string/starts-with? value (str attribute "-")))
+           true))))
+   (:attributes state)))
 
 
-(defn type?
-  [application member]
-  (contains? (:types application) (:name member)))
+(defn selector?
+  [state selector]
+  (every?
+   (fn [member]
+     (case (:type member)
 
+       :member
+       (let [value (:value member)] 
+         (case (:group member)
+           :type       (contains? (:types       state) value)
+           :class      (contains? (:classes     state) (subs value 1))
+           :identifier (contains? (:identifiers state) (subs value 1))
+           :pseudo     (contains? (:pseudos     state)
+                                  (first (string/split value #"\(")))
+           true))
 
-(defn pseudo?
-  [application member]
-  (contains? (:pseudos application) (:name member)))
+       :member-function
+       (contains? (:functions state)
+                  (apply str (butlast (:name member))))
+       
 
+       :selector-attribute
+       (attribute? state member)
 
-(defn identifier?
-  [application member]
-  (contains? (:identifiers application) (:name member)))
-
-
-(defn function?
-  [application member]
-  (contains? (:functions application) (:function member)))
-
-
-(defn used-variable?
-  [context declaration]
-  (contains? (:used-variables context) (:property declaration)))
-
-(defn variable?
-  [context variable]
-  (contains? (:variables context) variable))
+       true))
+   (:members selector)))
 
 
 (defn keyframes?
@@ -43,20 +55,6 @@
   (contains? (:animations context) (:name keyframes)))
 
 
-(defn attribute?
-  [application member]
-  (some (fn [[attribute-name attribute-value]]
-          (when (= attribute-name (:name member))
-            (condp = (-> member :operator :name)
-              "="  (= attribute-value (:attribute member))
-              "^=" (string/starts-with? attribute-value (:attribute member))
-              "$=" (string/ends-with?   attribute-value (:attribute member))
-              "*=" (string/includes?    attribute-value (:attribute member))
-              "~=" (some #(= (:attribute member) %)
-                         (string/split attribute-value #" "))
-              "|=" (or (= attribute-value (:attribute member))
-                       (string/starts-with? attribute-value (str (:attribute member) "-")))
-              true)))
-        (:attributes application)))
-
-
+(defn variable?
+  [context variable]
+  (contains? (:variables context) variable))

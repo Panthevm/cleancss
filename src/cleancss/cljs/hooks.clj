@@ -60,4 +60,4 @@
         export-config (-> env/config :build :export)]
     (->> env/stylesheets
          (core/clean state)
-         (core/export-to-file export-config))))
+         (core/schema->resource (:output-file export-config)))))

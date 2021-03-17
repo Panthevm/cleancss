@@ -173,8 +173,8 @@
 
 (def functions
   #{":is"
-    ;;":not"
-    ;;":nth"
+    ;;"not"
+    ;;"nth-*"
     ":dir"
     ":has"
     ":host"
@@ -191,6 +191,7 @@
 
 
 (def stylesheets
-  (-> config :build :import core/import-from-file))
+  (->> config :build :import :input-files
+       (mapcat core/resource->schema)))
 
 

@@ -4,21 +4,7 @@
 (defn add-animation
   [context declaration]
   (update context :animations
-          conj (-> declaration :meta :animation)))
-
-
-(defn add-variable
-  [context declaration]
-  (update context :variables
-          conj (:property declaration)))
-
-
-(defn add-used-variables
-  [context declaration]
-  (update context :used-variables
-          into (->> declaration :meta :variables
-                    (map (fn [variable]
-                           (first (re-seq #"[^,]+" variable)))))))
+          conj (re-find #"\S+" (:expression declaration))))
 
 
 (defn get-context
@@ -32,19 +18,12 @@
             node-type (:type node)]
         (cond
           (= :declaration node-type)
-          (let [declaration-type (-> node :meta :type)]
-            (cond 
+          (cond 
 
-              (= :animation declaration-type)
-              (recur (next nodes) (add-animation context node))
+            (#{"animation" "animation-name"} (:property node))
+            (recur (next nodes) (add-animation context node))
 
-              (= :variable declaration-type)
-              (recur (next nodes) (add-variable context node))
-
-              (-> node :meta :variables)
-              (recur (next nodes) (add-used-variables context node))
-
-              :else (recur (next nodes) context)))
+            :else (recur (next nodes) context))
 
           (= :style-rule node-type)
           (recur (into (next nodes) (:declarations node)) context)

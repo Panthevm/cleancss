@@ -1,40 +1,36 @@
 (ns cleancss.core
   (:gen-class)
   (:require
-   [cleancss.import      :as import]
+   [cleancss.data        :as data]
    [cleancss.filter      :as filter]
    [cleancss.context     :as context]
-   [cleancss.compression :as compress]
-   [cleancss.export      :as export]))
+   [cleancss.compression :as compress]))
 
 
-(defn import-from-string
-  [stylesheet]
-  (import/from-string stylesheet))
+(defn string->schema
+  [^String value]
+  (data/string->schema value))
 
 
-(defn import-from-file
-  [options]
-  (import/from-file options))
+(defn schema->string
+  [schema]
+  (data/schema->string schema))
 
 
-(defn export-to-string
-  [stylesheets]
-  (export/to-string stylesheets))
+(defn resource->schema
+  [resource]
+  (data/resource->schema resource))
 
 
-(defn export-to-file
-  [options stylesheets]
-  (export/to-file options stylesheets))
+(defn schema->resource
+  [resource schema]
+  (data/schema->resource resource schema))
 
 
 (defn clean
-  [state stylesheets]
-  (let [state-stylesheets (filter/by-state state stylesheets)
-        context           (context/get-context state-stylesheets)]
-    (->> state-stylesheets
+  [state schema]
+  (let [state-schema (filter/by-state state schema)
+        context      (context/get-context state-schema)]
+    (->> state-schema
          (filter/by-context context)
          (compress/make))))
-
-
-(defn -main [& args])

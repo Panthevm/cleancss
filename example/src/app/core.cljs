@@ -1,10 +1,10 @@
 (ns ^:figwheel-hooks app.core
   (:require
-   [reagent.dom    :as dom]
    [cleancss.cljs.state :refer [c]]
-   [app.components.sidebar.view :as sidebar]
 
-   [app.pages.intro.view :as intro]))
+   [reagent.dom                 :as dom]
+   [app.components.sidebar.view :as sidebar]
+   [app.pages.intro.view        :as intro]))
 
 (defn view
   []

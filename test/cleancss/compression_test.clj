@@ -1,8 +1,7 @@
 (ns cleancss.compression-test
   (:require
    [cleancss.compression :as    sut]
-   [cleancss.import      :as    import]
-   [cleancss.export      :as    export]
+   [cleancss.data        :as    data]
    [clojure.test         :refer [deftest testing]]
    [matcho.core          :refer [match]]))
 
@@ -10,9 +9,9 @@
 (defmacro defcase
   [before & after]
   `(match
-    (->> (import/from-string ~before)
+    (->> (data/string->schema ~before)
          (sut/make)
-         (export/to-string))
+         (data/schema->string))
     (apply str ~@after)))
 
 

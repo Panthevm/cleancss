@@ -1,8 +1,7 @@
 (ns cleancss.filter-test
   (:require
    [cleancss.filter  :as sut]
-   [cleancss.import  :as import]
-   [cleancss.export  :as export]
+   [cleancss.data    :as data]
    [clojure.test     :refer :all]
    [matcho.core      :refer [match]]))
 
@@ -10,18 +9,18 @@
 (defmacro defstate
   [state before & after]
   `(match
-    (->> (import/from-string ~before)
+    (->> (data/string->schema ~before)
          (sut/by-state ~state)
-         (export/to-string))
+         (data/schema->string))
     (apply str ~@after)))
 
 
 (defmacro defcontext
   [context before & after]
   `(match
-    (->> (import/from-string ~before)
+    (->> (data/string->schema ~before)
          (sut/by-context ~context)
-         (export/to-string))
+         (data/schema->string))
     (apply str ~@after)))
 
 
@@ -139,9 +138,8 @@
 
 
   (testing "not"
-    (defstate {:attributes #{["A"]}}
-      ":not([B]){}
-       :not([A]){}"
+    (defstate {}
+      ":not([A]){}"
 
       ":not([A]){}"))
 
@@ -171,29 +169,4 @@
       "@keyframes A{}
        @keyframes B{}"
 
-      "@keyframes A{}"))
-
-  (testing "unused variables"
-    (defcontext {:variables      #{"--a"}
-                 :used-variables #{"--a"}} 
-      "E{--a:0;--b:1}"
-
-      "E{--a:0}"))
-
-
-  (testing "empty reference"
-    (defcontext {:variables #{"--a"}} 
-      "E{color:var(--a);
-         right:var(--b)}"
-
-      "E{color:var(--a)}"))
-  
-
-  (testing "empty"
-    (defcontext {}
-      "A{}
-       @media all{}
-       @media all{A{}}
-       @media all{@media all{}}"
-
-      "")))
+      "@keyframes A{}")))
