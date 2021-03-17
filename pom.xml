@@ -4,9 +4,9 @@
   <packaging>jar</packaging>
   <groupId>cleancss</groupId>
   <artifactId>cleancss</artifactId>
-  <version>0.6.0</version>
+  <version>1.0.0</version>
   <name>cleancss</name>
-  <description>CleanCSS - is a tool that removes unused CSS stylesheets</description>
+  <description>CleanCSS - ClojureScript tool that removes unused CSS</description>
   <url>https://github.com/Panthevm/cleancss</url>
   <licenses>
     <license>
