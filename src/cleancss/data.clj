@@ -254,7 +254,7 @@
 
 
 (defn schema->resource
-  [resource schema]
+  [schema resource]
   (let [cascading* (CascadingStyleSheet.)
         settings*  (CSSWriterSettings. ECSSVersion/CSS30 true)
         writer*    (doto (CSSWriter. settings*)

@@ -1,0 +1,1 @@
+{:selectors {:classes #{"rounded-r-lg" "focus:shadow-inner" "hover:bg-gray-100" "rounded-lg" "my-px" "font-medium" "text-gray-400" "max-w-xs" "my-3" "text-lg" "h-12" "p-8" "ml-3" "items-center" "relative" "shadow-md" "text-gray-600" "bg-white" "flex" "w-full"}}, :namespace app.components.sidebar.view}

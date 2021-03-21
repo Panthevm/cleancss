@@ -1,9 +1,9 @@
-(ns cleancss.filter-test
+(ns cleancss.clean-test
   (:require
-   [cleancss.filter  :as sut]
-   [cleancss.data    :as data]
-   [clojure.test     :refer :all]
-   [matcho.core      :refer [match]]))
+   [cleancss.clean  :as sut]
+   [cleancss.data   :as data]
+   [clojure.test    :refer :all]
+   [matcho.core     :refer [match]]))
 
 
 (defmacro defstate

@@ -1,7 +1,9 @@
 (ns app.components.sidebar.view
   (:require
-   [app.components.sidebar.model :as model]
-   [cleancss.cljs.state          :refer [c]]))
+   [cleancss.core :refer [c]]
+
+   [app.components.sidebar.model :as model]))
+
 
 (defn component
   []

@@ -1,12 +1,12 @@
-(ns cleancss.cljs.env
+(ns cleancss.env
   (:require
-   [cleancss.core :as core]
+   [cleancss.data   :as data]
+   [clojure.edn     :as edn]
+   [clojure.java.io :as io]))
 
-   [clojure.java.io :as io]
-   [clojure.edn     :as edn])
 
-  (:import
-   [java.io PushbackReader]))
+(defonce context
+  (atom nil))
 
 
 (def types
@@ -173,8 +173,6 @@
 
 (def functions
   #{":is"
-    ;;"not"
-    ;;"nth-*"
     ":dir"
     ":has"
     ":host"
@@ -182,16 +180,56 @@
     ":where"
     ":host-context"})
 
-(def config
-  (let [file (io/file "cleancss.edn")]
-    (if (.exists file)
-      (-> file io/reader PushbackReader. edn/read)
-      (throw
-       (ex-info "CleanCSS: configuration file not found" {})))))
+
+(defn set-configuration
+  [path]
+  (-> 
+   (edn/read-string (slurp path))
+   (update :selectors
+           (partial merge
+                    {:types     types
+                     :pseudos   pseudos
+                     :functions functions}))))
 
 
-(def stylesheets
-  (->> config :build :import :input-files
-       (mapcat core/resource->schema)))
+(defn set-stylesheets
+  [context]
+  (->> context
+       :configuration :build :import :input-files
+       (mapcat data/resource->schema)
+       (assoc context :stylesheets)))
 
 
+(defn initialize-context
+  [path]
+  (when (.exists (io/file path))
+    (swap! context
+           (fn [value]
+             (-> value
+                 (assoc :configuration (set-configuration path))
+                 set-stylesheets)))))
+
+
+(defn get-cache-directory
+  [ctx]
+  (-> ctx :configuration :output-to))
+
+
+(defn get-watch-directory
+  [ctx]
+  (-> ctx :configuration :watch-dirs))
+
+
+(defn get-output-file-directory
+  [ctx]
+  (-> ctx :configuration :build :export :output-file))
+
+
+(defn get-default-selectors
+  [ctx]
+  (-> ctx :configuration :selectors))
+
+
+(defn get-stylesheets
+  [ctx]
+  (-> ctx :stylesheets))

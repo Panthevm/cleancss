@@ -1,6 +1,12 @@
 {:paths ["src"]
- :deps  {org.clojure/clojurescript {:mvn/version "LATEST"}
-         reagent/reagent           {:mvn/version "LATEST"}}
+
+ :mvn/repos
+ {"sonatype-oss-public"
+  {:url "https://oss.sonatype.org/content/groups/public/"}}
+
+ :deps
+ {org.clojure/clojurescript {:mvn/version "LATEST"}
+  reagent/reagent           {:mvn/version "LATEST"}}
 
  :aliases
  {:figwheel

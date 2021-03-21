@@ -1,6 +1,6 @@
 (ns ^:figwheel-hooks app.core
   (:require
-   [cleancss.cljs.state :refer [c]]
+   [cleancss.core :refer [c]]
 
    [reagent.dom                 :as dom]
    [app.components.sidebar.view :as sidebar]
@@ -23,3 +23,4 @@
   (dom/render [view] (js/document.getElementById "app")))
 
 (mount)
+

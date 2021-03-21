@@ -1,6 +1,13 @@
 {:paths ["src"]
- :deps  {org.clojure/clojure {:mvn/version "RELEASE"}
-         com.helger/ph-css   {:mvn/version "RELEASE"}}
+
+ :mvn/repos
+ {"sonatype-oss-public"
+  {:url "https://oss.sonatype.org/content/groups/public/"}}
+
+ :deps
+ {org.clojure/clojure         {:mvn/version "RELEASE"}
+  org.clojure/tools.namespace {:mvn/version "RELEASE"}
+  com.helger/ph-css           {:mvn/version "RELEASE"}}
 
  :aliases
  {:test

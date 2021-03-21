@@ -1,6 +1,7 @@
 {:watch-dirs ["src"]
+ :output-to  "resources/public/css/out"
 
- :state
+ :selectors
  {:types #{"*"
            "a"
            "ul"

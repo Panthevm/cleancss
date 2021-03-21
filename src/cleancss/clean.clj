@@ -1,7 +1,8 @@
-(ns cleancss.filter
+(ns cleancss.clean
   (:require
-   [cleancss.find :as find]))
-
+   [cleancss.find        :as find]
+   [cleancss.context     :as context]
+   [cleancss.compression :as compress]))
 
 
 (defn by-state
@@ -34,3 +35,12 @@
 
        true))
    nodes))
+
+
+(defn clean
+  [state schema]
+  (let [state-schema (by-state state schema)
+        context      (context/get-context state-schema)]
+    (->> state-schema
+         (by-context context)
+         (compress/make))))
