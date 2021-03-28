@@ -75,6 +75,10 @@ cleancss/cleancss {:mvn/version "0.6.0"}
     "Info"]])
 ```
 
+## Workflow
+
+![workflow](https://imageshost.ru/images/2021/03/28/Untitled-Diagram2.png)
+
 ## Demo
 ![demo](https://s2.gifyu.com/images/simplescreenrecorder-2021-01-26.gif)
 
