@@ -77,7 +77,7 @@ cleancss/cleancss {:mvn/version "0.6.0"}
 
 ## Workflow
 
-![workflow](https://imageshost.ru/images/2021/03/28/Untitled-Diagram2.png)
+<p align="center"><img src="https://imageshost.ru/images/2021/03/28/Untitled-Diagram2.png" alt="workflow"></p>
 
 ## Demo
 ![demo](https://s2.gifyu.com/images/simplescreenrecorder-2021-01-26.gif)
