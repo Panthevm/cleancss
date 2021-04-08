@@ -1,12 +1,31 @@
 (ns cleancss.env
   (:require
-   [cleancss.data   :as data]
    [clojure.edn     :as edn]
    [clojure.java.io :as io]))
 
 
-(defonce context
-  (atom nil))
+(defn build-import-directory
+  [context]
+  (-> context :build :import :directory))
+
+
+(defn get-output-file-directory
+  [context]
+  (-> context :configuration :build :export :file))
+
+
+(defn get-cache-directory
+  [context]
+  (-> context :configuration :build :cache :directory))
+
+(defn get-watch-directory
+  [context]
+  (-> context :configuration :watch-dirs))
+
+
+(defn get-default-selectors
+  [context]
+  (-> context :configuration :default))
 
 
 (def types
@@ -179,57 +198,3 @@
     ":lang"
     ":where"
     ":host-context"})
-
-
-(defn set-configuration
-  [path]
-  (-> 
-   (edn/read-string (slurp path))
-   (update :selectors
-           (partial merge
-                    {:types     types
-                     :pseudos   pseudos
-                     :functions functions}))))
-
-
-(defn set-stylesheets
-  [context]
-  (->> context
-       :configuration :build :import :input-files
-       (mapcat data/resource->schema)
-       (assoc context :stylesheets)))
-
-
-(defn initialize-context
-  [path]
-  (when (.exists (io/file path))
-    (swap! context
-           (fn [value]
-             (-> value
-                 (assoc :configuration (set-configuration path))
-                 set-stylesheets)))))
-
-
-(defn get-cache-directory
-  [ctx]
-  (-> ctx :configuration :output-to))
-
-
-(defn get-watch-directory
-  [ctx]
-  (-> ctx :configuration :watch-dirs))
-
-
-(defn get-output-file-directory
-  [ctx]
-  (-> ctx :configuration :build :export :output-file))
-
-
-(defn get-default-selectors
-  [ctx]
-  (-> ctx :configuration :selectors))
-
-
-(defn get-stylesheets
-  [ctx]
-  (-> ctx :stylesheets))

@@ -1,1 +1,0 @@
-{:selectors {:classes #{"min-h-screen" "my-12" "bg-gray-100" "mx-24" "flex" "w-full"}}, :namespace app.core}

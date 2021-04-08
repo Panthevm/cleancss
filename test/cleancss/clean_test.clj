@@ -1,7 +1,8 @@
 (ns cleancss.clean-test
   (:require
    [cleancss.clean  :as sut]
-   [cleancss.data   :as data]
+
+   [clj-ph-css.core :as    css]
    [clojure.test    :refer :all]
    [matcho.core     :refer [match]]))
 
@@ -9,19 +10,35 @@
 (defmacro defstate
   [state before & after]
   `(match
-    (->> (data/string->schema ~before)
+    (->> (css/string->schema ~before)
          (sut/by-state ~state)
-         (data/schema->string))
+         (css/schema->string))
     (apply str ~@after)))
 
 
 (defmacro defcontext
   [context before & after]
   `(match
-    (->> (data/string->schema ~before)
+    (->> (css/string->schema ~before)
          (sut/by-context ~context)
-         (data/schema->string))
+         (css/schema->string))
     (apply str ~@after)))
+
+
+(defmacro match-compression
+  [before & after]
+  `(match
+    (->> (css/string->schema ~before)
+         (sut/compression)
+         (css/schema->string))
+    (apply str ~@after)))
+
+
+(defmacro def-match-context
+  [css context]
+  `(match
+    (->> ~css css/string->schema sut/get-context)
+    ~context))
 
 
 (deftest clean-by-state
@@ -170,3 +187,63 @@
        @keyframes B{}"
 
       "@keyframes A{}")))
+
+
+(deftest get-context
+
+
+  (testing "animation"
+    (def-match-context
+      "E{animation: name infinite ease-in-out}"
+      {:animations #{"name"}})
+    (def-match-context
+      "E{animation-name: name}"
+      {:animations #{"name"}})))
+
+
+
+
+(deftest compression
+
+
+  (testing "duplicate declarations"
+    (match-compression
+     "E{a:1;b:2;a:3}"
+
+     "E{a:3;b:2}"))
+
+
+  (testing "duplicate selectors"
+    (match-compression
+      "A,A,B{a:a}
+       A A,A A{a:a}"
+
+      "A,B{a:a}"
+      "A A{a:a}"))
+
+
+  (testing "duplicate style"
+    (match-compression
+      "E{a:1}
+       E{a:2}"
+
+      "E{a:2}"))
+
+
+  (testing "duplicate media"
+    (match-compression
+      "@media all {A{}}
+       @media all {B{}}
+       A{}"
+
+      "@media all{A{}B{}}"
+      "A{}"))
+
+
+  (testing "duplicate keyframes"
+    (match-compression
+      "@keyframes A {from {color: red}}
+       @keyframes A {from {right: 100}}
+       @keyframes A {to   {right: 100}}"
+
+      "@keyframes A{from{color:red;right:100}to{right:100}}")))
