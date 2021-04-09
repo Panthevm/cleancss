@@ -6,20 +6,15 @@
 
 CleanCSS - ClojureScript tool that removes unused CSS
 
-## Installation
+## Quickstart
 
-To install, add the following dependency
+1) Add a dependency
+
 ```edn
-;; Clojure CLI
 cleancss/cleancss {:mvn/version "2.0.0"}
-
-;; Leiningen
-[cleancss/cleancss "2.0.0"]
 ```
 
-## Usage
-
-1) Call the `cleancss.watcher/create` at the start of the app.
+2) Call the `cleancss.watcher/create` at the start of the app.
 
 ```clojure
 (defonce develop
@@ -38,7 +33,7 @@ cleancss/cleancss {:mvn/version "2.0.0"}
 
 ```
 
-2) Mark class names and identifiers with literals
+3) Mark class names and identifiers with literals
 
 ```clojure
 [:div {:id #i"id-foo"
@@ -46,3 +41,24 @@ cleancss/cleancss {:mvn/version "2.0.0"}
                #c"class-baz"]}
  "Hello"]
 ```
+
+# Configuration
+
+#### `:default` - manually specifying selectors (optional)
+
+```clojure
+(figwheel-options/create
+ {;; ...
+  :default
+  {:types       #{"*" "html" "body" "div"}
+   :classes     #{"container"}
+   :pseudos     #{":hover"}
+   :functions   #{":lang"}
+   :identifiers #{"id"}
+   :attributes  #{["type" "button"]
+                  ["href" "#"]
+                  ["lang"]}}
+  ;; ...
+  })
+```
+
