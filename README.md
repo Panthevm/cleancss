@@ -6,79 +6,43 @@
 
 CleanCSS - ClojureScript tool that removes unused CSS
 
+## Installation
+
+To install, add the following dependency
+```edn
+;; Clojure CLI
+cleancss/cleancss {:mvn/version "2.0.0"}
+
+;; Leiningen
+[cleancss/cleancss "2.0.0"]
+```
+
 ## Usage
 
-1) Add a dependency:
-
-
-```edn
-cleancss/cleancss {:mvn/version "0.6.0"}
-```
-
-2) Create the `cleancss.edn` configuration file in the root directory of the project:
-
-```edn
-{;; project sources
- :watch-dirs ["src"]
- 
- :state
- {;; If not specified, the value will be `cleancss.cljs.env/functions`
-  ;; :functions #{":lang" ...}
-
-  ;; If not specified, the value will be `cleancss.cljs.env/pseudos`
-  ;; :pseudos #{":hover" ...}
-
-  ;; If not specified, the value will be `cleancss.cljs.env/types`
-  ;; :types #{"*", "div" ...}
-
-  ;; If you do not specify a value, the data will be taken from the application
-  ;; :identifiers #{"id"}
-  ;; :classes     #{"name"}
-  ;; :attributes  #{["hidden"] ["hreflang" "en"]}
-  }
-
- :build
- {;; Path to the source css file
-  :import {:input-files ["resources/public/css/tailwind.min.css"]}
-
-  ;; The path to the file where the final result will be stored
-  :export {:output-file "resources/public/css/cleancss.css"}}}
-
-```
-
-3) Add a call to `cleancss.cljs.hooks/reset` before building the project and `cleancss.cljs.hooks/build` after building.For example, in [figwheel-main](https://github.com/bhauman/figwheel-main), this is configured as follows:
-
-```edn
-  :css-dirs         ["resources/public/css"]
-  :pre-build-hooks  [cleancss.cljs.hooks/reset]
-  :post-build-hooks [cleancss.cljs.hooks/build]
-```
-
-4) Wrap all the styles you use in a macro
+1) Call the `cleancss.watcher/create` at the start of the app.
 
 ```clojure
-(ns app.core
-  (:require
-   [cleancss.cljs.state :refer [c i a]))
+(defonce develop
+  (cleancss.watcher/create
+   {;; A list of source directories to be watched
+    :watch-dirs ["src"]
 
-(defn component
-  []
-  ;; classes
-  [:nav {:class (c "shadow-md" "rounded-lg")}
+    :build
+    {;; Directory with css source files
+     :import {:directory "resources/public/css/src"} 
+     ;; The directory where the cached data will be stored
+     :cache  {:directory "resources/public/css/out"} 
+     ;; Output file
+     :export {:file "resources/public/css/clean.css"}}}))
 
-   ;; identifiers
-   [:button {:id (i "id")}
-    "Login"]
 
-   ;; attributes, classes, identifiers
-   [:button (a {:id "send" :class ["save"] :type "button"})
-    "Info"]])
 ```
 
-## Workflow
+2) Mark class names and identifiers with literals
 
-<p align="center"><img src="https://imageshost.ru/images/2021/03/28/Untitled-Diagram2.png" alt="workflow"></p>
-
-## Demo
-![demo](https://s2.gifyu.com/images/simplescreenrecorder-2021-01-26.gif)
-
+```clojure
+[:div {:id #i"id-foo"
+       :class [#c"class-bar"
+               #c"class-baz"]}
+ "Hello"]
+```
