@@ -37,6 +37,7 @@
   (str cache-directory File/separator user-file-path ".edn"))
 
 
+
 (defn update-file-cache
   [context ^File file]
   (let [cache-file-path
@@ -91,13 +92,21 @@
   (apply merge-with into (vals selectors)))
 
 
+(defn add-default-selectors
+  [context selectors]
+  (->> (env/get-default-selectors context)
+       (merge
+        {:types     env/types
+         :pseudos   env/pseudos
+         :functions env/functions})
+       (merge-with into selectors)))
 
 
 (defn export-css
   [context]
   (->> (:selectors context)
        (merge-cache-selectors)
-       (merge-with into (env/get-default-selectors context))
+       (add-default-selectors context)
        (clean/clean (:stylesheets context))
        (css/schema->string)
        (spit (env/get-output-file-directory context)))
@@ -153,13 +162,4 @@
 
 (defn create
   [configuration]
-  (->CleanCssWatcher configuration))
-
-(comment 
-  (def s (create {:watch-dirs ["src"]
-                  :build {:import {:directory "/home/panthevm/study/cleancss/example/resources/public/css"}
-                          :cache  {:directory "ff"}
-                          :export {:file "cleancss.css"}}}))
-  (.start s)
-  (.stop s))
-
+  (.start (->CleanCssWatcher configuration)))

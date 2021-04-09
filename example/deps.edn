@@ -1,0 +1,17 @@
+{:paths ["src"]
+
+ :deps
+ {org.clojure/clojurescript {:mvn/version "1.10.520"}
+  reagent/reagent           {:mvn/version "1.0.0"}}
+
+ :aliases
+ {:develop
+  {:extra-paths ["dev"]
+   :extra-deps {cleancss/cleancss {:local/root "../"}}
+   :main-opts  ["-m" "user"]}
+  
+  :figwheel
+  {:extra-paths ["resources"]
+   :extra-deps  {com.bhauman/figwheel-main {:mvn/version "0.2.4"}}}
+
+  }}
