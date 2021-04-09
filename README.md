@@ -41,7 +41,7 @@ cleancss/cleancss {:mvn/version "2.0.0"}
                #c"class-baz"]}
  "Hello"]
 ```
-
+[Example (Figwheel)](https://github.com/Panthevm/cleancss/tree/main/example)
 # Configuration
 
 #### `:default` - manually specifying selectors (optional)
