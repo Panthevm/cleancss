@@ -1,10 +1,9 @@
 {:paths ["src"]
 
  :deps
- {org.clojure/clojure         {:mvn/version "RELEASE"}
-  hawk/hawk                   {:mvn/version "RELEASE"}
-  com.stuartsierra/component  {:mvn/version "RELEASE"}
-  clj-ph-css/clj-ph-css       {:mvn/version "0.1.1"}}
+ {org.clojure/clojure   {:mvn/version "RELEASE"}
+  clj-ph-css/clj-ph-css {:mvn/version "RELEASE"}
+  hawk/hawk             {:mvn/version "RELEASE"}}
 
  :aliases
  {:test

@@ -21,32 +21,41 @@
    (:attributes state)))
 
 
-(defn selector?
-  [state selector]
-  (every?
-   (fn [member]
-     (case (:type member)
+(defn member?
+  [state member]
+  (let [member-type (:type member)]
+    (cond
 
-       :member-simple
-       (let [value (:value member)] 
-         (case (:group member)
-           :type       (contains? (:types       state) value)
-           :class      (contains? (:classes     state) (subs value 1))
-           :identifier (contains? (:identifiers state) (subs value 1))
-           :pseudo     (contains? (:pseudos     state)
-                                  (first (string/split value #"\(")))
-           true))
+      (= :member-simple member-type)
+      (let [member-group (:group member)]
+        (cond
+          (= :class member-group)
+          (contains? (:classes state) (subs (:value member) 1))
 
-       :member-function
-       (contains? (:functions state)
-                  (apply str (butlast (:name member))))
-       
+          (= :identifier member-group)
+          (contains? (:identifiers state) (subs (:value member) 1))
 
-       :selector-attribute
-       (attribute? state member)
+          (and (= :type member-group)
+               (:types state))
+          (contains? (:types state) (:value member))
 
-       true))
-   (:members selector)))
+
+          (and (= :pseudo member-group)
+               (:pseudos state))
+          (contains? (:pseudos state)
+                     (first (string/split (:value member) #"\(")))
+
+          :else true))
+
+      (and (= :member-function member-type)
+           (:functions state))
+      (contains? (:functions state)
+                 (apply str (butlast (:name member))))
+
+      (= :selector-attribute member-type)
+      (attribute? state member)
+
+      :else true)))
 
 
 (defn by-state
@@ -56,7 +65,8 @@
      (case (:type node)
 
        :selector
-       (selector? state node)
+       (every? (partial member? state)
+               (:members node))
 
        :style-rule
        (seq (by-state state (:selectors node)))

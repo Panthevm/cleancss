@@ -1,30 +1,53 @@
 (ns cleancss.watcher
   (:require
-   [cleancss.env    :as env]
    [cleancss.clean  :as clean]
-   [clj-ph-css.core :as css]
 
    [clojure.java.io :as io]
-   [clojure.string  :as string]
    [clojure.edn     :as edn]
+   [clojure.string  :as string]
 
-   [hawk.core                  :as hawk]
-   [com.stuartsierra.component :as component])
+   [clj-ph-css.core :as css]
+   [hawk.core       :as hawk])
 
   (:import
    [java.io File]))
 
 
+(defn build-import-directory
+  [context]
+  (-> context :build :import :directory))
+
+
+(defn get-output-file-directory
+  [context]
+  (-> context :configuration :build :export :file))
+
+
+(defn get-cache-directory
+  [context]
+  (-> context :configuration :build :cache :directory))
+
+(defn get-watch-directory
+  [context]
+  (-> context :configuration :watch-dirs))
+
+
+(defn get-default-selectors
+  [context]
+  (-> context :configuration :default))
+
+
 (defn extract-classes
   [^String form]
-  (set (re-seq #"(?<=#c/c.*\")(?:.*?)(?=\")" form)))
+  (set (map last (re-seq #"(?:#c)(\s|,)*?\"(.*?)\"" form))))
+
 
 (defn extract-identifiers
   [^String form]
-  (set (re-seq #"(?<=#c/i.*\")(?:.*?)(?=\")" form)))
+  (set (map last (re-seq #"(?:#i)(\s|,)*?\"(.*?)\"" form))))
 
 
-(defn get-user-file-path
+(defn user-file-path
   [^File file]
   (string/replace
    (.getCanonicalPath file)
@@ -32,24 +55,33 @@
    (str)))
 
 
-(defn make-cache-file-path
+(defn cache-file-path
   [cache-directory user-file-path]
   (str cache-directory File/separator user-file-path ".edn"))
 
+
+(defn directory-files
+  [directory-path]
+  (when (.exists (io/as-file directory-path))
+    (->> (io/file directory-path)
+         (file-seq)
+         (remove #(.isDirectory %)))))
+
+
+(defn content-selectors
+  [^String form]
+  {:classes     (extract-classes form)
+   :identifiers (extract-identifiers form)})
 
 
 (defn update-file-cache
   [context ^File file]
   (let [cache-file-path
-        (-> (env/get-cache-directory context)
-            (make-cache-file-path (get-user-file-path file)))
-
-        file-content
-        (slurp file)
+        (->> (user-file-path file)
+             (cache-file-path (get-cache-directory context)))
 
         file-selectors
-        {:classes     (extract-classes file-content)
-         :identifiers (extract-identifiers file-content)}
+        (content-selectors (slurp file))
 
         new-context
         (assoc-in context [:selectors cache-file-path]
@@ -64,25 +96,17 @@
 (defn delete-file-cache
   [context ^File file]
   (let [cache-file-path
-        (-> (env/get-cache-directory context)
-            (make-cache-file-path (get-user-file-path file)))]
+        (->> (user-file-path file) 
+             (cache-file-path (get-cache-directory context)))]
 
     (io/delete-file (io/file cache-file-path))
     (update context :selectors dissoc cache-file-path)))
 
 
-(defn get-directory-files
-  [directory-path]
-  (when (.exists (io/as-file directory-path))
-    (->> (io/file directory-path)
-         (file-seq)
-         (remove #(.isDirectory %)))))
-
-
 (defn import-css
   [context]
-  (some->> (env/build-import-directory context)
-           (get-directory-files)
+  (some->> (build-import-directory context)
+           (directory-files)
            (filter #(string/ends-with? (.getName %) ".css"))
            (mapcat (comp css/string->schema slurp))))
 
@@ -94,11 +118,7 @@
 
 (defn add-default-selectors
   [context selectors]
-  (->> (env/get-default-selectors context)
-       (merge
-        {:types     env/types
-         :pseudos   env/pseudos
-         :functions env/functions})
+  (->> (get-default-selectors context)
        (merge-with into selectors)))
 
 
@@ -109,37 +129,33 @@
        (add-default-selectors context)
        (clean/clean (:stylesheets context))
        (css/schema->string)
-       (spit (env/get-output-file-directory context)))
+       (spit (get-output-file-directory context)))
   context)
 
 
 (defn get-all-cache
   [context]
-  (some->> (env/get-cache-directory context)
-           (get-directory-files)
+  (some->> (get-cache-directory context)
+           (directory-files)
            (reduce
             (fn [cache ^File file]
-              (assoc cache (get-user-file-path file)
+              (assoc cache (user-file-path file)
                      (edn/read-string (slurp file))))
             {})))
 
-(defn watcher-run
-  [configuration]
-  (let [initialize-context
-        {:configuration configuration
-         :stylesheets   (import-css configuration)
-         :selectors     (get-all-cache configuration)}]
 
-    (hawk/watch!
-     [{:paths   (env/get-watch-directory initialize-context)
-       :context (constantly initialize-context)
-       :handler
-       (fn [context event]
-         (if (= :delete (:kind event))
-           (delete-file-cache context (:file event))
-           (-> context
-               (update-file-cache (:file event))
-               (export-css))))}])))
+(defn watcher-run
+  [initialize-context]
+  (hawk/watch!
+   [{:paths   (get-watch-directory initialize-context)
+     :context (constantly initialize-context)
+     :handler
+     (fn [context event]
+       (if (= :delete (:kind event))
+         (delete-file-cache context (:file event))
+         (-> context
+             (update-file-cache (:file event))
+             (export-css))))}]))
 
 
 (defn watcher-stop
@@ -147,19 +163,9 @@
   (hawk/stop! watcher))
 
 
-(defrecord CleanCssWatcher [configuration]
-  component/Lifecycle
-  (start [this]
-    (if (:watcher this)
-      this
-      (assoc this :watcher (watcher-run configuration))))
-  (stop [this]
-    (if (:watcher this)
-      (do (watcher-stop (:watcher this))
-          (dissoc this :watcher))
-      this)))
-
-
 (defn create
   [configuration]
-  (.start (->CleanCssWatcher configuration)))
+  (watcher-run
+   {:configuration configuration
+    :stylesheets   (import-css configuration)
+    :selectors     (get-all-cache configuration)}))

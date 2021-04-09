@@ -10,30 +10,67 @@
   (testing "extract-classes"
 
     (match
-     (sut/extract-classes "#c/c\"foo\"")
+     (sut/extract-classes "#c\"foo\"")
      #{"foo"})
 
     (match
-     (sut/extract-classes "#c/c  \"foo\"")
+     (sut/extract-classes "#c  \"foo\"")
      #{"foo"})
 
-    #_(match
-     (sut/extract-classes "#c/c \"foo\" #c/c \"bar\"")
+    (match
+     (sut/extract-classes "#c \"foo\" #c \"bar\"")
+     #{"foo" "bar"})
+
+    (match
+     (sut/extract-classes "#c \"foo\" 
+                           #c,\"bar\"")
      #{"foo" "bar"}))
 
 
-  (testing "get-user-file-path"
+  (testing "user-file-path"
     (match
-     (sut/get-user-file-path
+     (sut/user-file-path
       (io/file "test/cleancss/watcher_test.clj"))
      "test/cleancss/watcher_test.clj"))
 
 
-  (testing "make-cache-file-path"
+  (testing "cache-file-path"
     (match 
-     (sut/make-cache-file-path
+     (sut/cache-file-path
       "resources/public/css/out"
       "src/app/core.cljs")
-     "resources/public/css/out/src/app/core.cljs.edn") 
-    ))
+     "resources/public/css/out/src/app/core.cljs.edn"))
 
+
+  (testing "directory-files"
+    (match
+     (map #(.getName %) (sut/directory-files "test/cleancss")) 
+     ["watcher_test.clj" "clean_test.clj"]))
+
+
+  (testing "content-selectors"
+    (match
+     (sut/content-selectors
+      "#c \"foo\" #i \"bar\"")
+     {:classes     #{"foo"}
+      :identifiers #{"bar"}}))
+
+
+  (testing "add-default-selectors"
+    (match
+     (sut/add-default-selectors
+      {:configuration {:default nil}}
+      {:classes #{"foo" "bar"}})
+     {:classes #{"foo" "bar"}})
+
+    (match
+     (sut/add-default-selectors
+      {:configuration {:default {:classes #{"foo"}}}}
+      {}) 
+     {:classes #{"foo"}})
+
+    (match
+     (sut/add-default-selectors
+      {:configuration {:default {:classes #{"baz"}}}}
+      {:classes #{"foo" "bar"}}) 
+     {:classes #{"foo" "bar" "baz"}})))

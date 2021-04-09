@@ -18,7 +18,7 @@
     :mode :serve
 
     :ring-server-options
-    {:port 3449}}})
+    {:port 3000}}})
 
 
 (def cleancss-options
@@ -36,5 +36,4 @@
 (defn -main
   [& {:as args}]
   (repl/start figwheel-options)
-  (watcher/create cleancss-options)
-  )
+  (watcher/create cleancss-options))
