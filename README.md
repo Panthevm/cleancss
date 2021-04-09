@@ -47,7 +47,7 @@ cleancss/cleancss {:mvn/version "2.0.0"}
 #### `:default` - manually specifying selectors (optional)
 
 ```clojure
-(figwheel-options/create
+(cleancss.watcher/create
  {;; ...
   :default
   {:types       #{"*" "html" "body" "div"}
