@@ -2,6 +2,7 @@
   (:require
    [reagent.dom :as dom]))
 
+
 (defn view
   []
   [:div {:class [#c"min-h-screen"
@@ -12,5 +13,6 @@
 (defn mount
   []
   (dom/render [view] (js/document.getElementById "root")))
+
 
 (mount)

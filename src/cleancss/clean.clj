@@ -52,7 +52,8 @@
       (contains? (:functions state)
                  (apply str (butlast (:name member))))
 
-      (= :selector-attribute member-type)
+      (and (= :selector-attribute member-type)
+           (:attributes state))
       (attribute? state member)
 
       :else true)))

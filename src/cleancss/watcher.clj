@@ -152,7 +152,9 @@
      :handler
      (fn [context event]
        (if (= :delete (:kind event))
-         (delete-file-cache context (:file event))
+         (-> context
+             (delete-file-cache (:file event))
+             (export-css))
          (-> context
              (update-file-cache (:file event))
              (export-css))))}]))
@@ -168,4 +170,5 @@
   (watcher-run
    {:configuration configuration
     :stylesheets   (import-css configuration)
-    :selectors     (get-all-cache configuration)}))
+    :selectors     (get-all-cache
+                    {:configuration configuration})}))
