@@ -4,7 +4,7 @@
   <packaging>jar</packaging>
   <groupId>cleancss</groupId>
   <artifactId>cleancss</artifactId>
-  <version>1.0.0</version>
+  <version>2.0.0</version>
   <name>cleancss</name>
   <description>CleanCSS - ClojureScript tool that removes unused CSS</description>
   <url>https://github.com/Panthevm/cleancss</url>
@@ -25,12 +25,17 @@
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>clojure</artifactId>
-      <version>1.10.2-rc3</version>
+      <version>1.10.3</version>
     </dependency>
     <dependency>
-      <groupId>com.helger</groupId>
-      <artifactId>ph-css</artifactId>
-      <version>6.2.3</version>
+      <groupId>hawk</groupId>
+      <artifactId>hawk</artifactId>
+      <version>0.2.11</version>
+    </dependency>
+    <dependency>
+      <groupId>clj-ph-css</groupId>
+      <artifactId>clj-ph-css</artifactId>
+      <version>0.1.3</version>
     </dependency>
   </dependencies>
   <build>
